@@ -12,7 +12,7 @@ func main() {
 
 	var c []byte
 	var err error
-	if c, err = xor(a, b); err != nil {
+	if c, err = XOR(a, b); err != nil {
 		fmt.Println("Failed: ", err)
 		return
 	}

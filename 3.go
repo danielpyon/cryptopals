@@ -12,19 +12,19 @@ func main() {
 	scores := make(map[string]float64)
 	for key = 0; key < 255; key++ {
 		mask := make([]byte, len(input))
-		fillArray(mask, key)
+		FillArray(mask, key)
 
-		result, err := xor(input, mask)
+		result, err := XOR(input, mask)
 		if err != nil {
 			panic("not same length")
 		}
 
 		plaintext := BytesToString(result)
-		scores[plaintext] = score(plaintext)
+		scores[plaintext] = ScoreEnglish(plaintext)
 	}
 
 	fmt.Println("Results:")
-	rankings := rankByScore(scores)
+	rankings := RankByScore(scores)
 	for i := 0; i < len(rankings); i++ {
 		if i > 5 {
 			break

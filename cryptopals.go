@@ -15,7 +15,7 @@ import (
 )
 
 // Converts a hex string to base64
-func hex_to_base64(input string) string {
+func HexToBase64(input string) string {
 	// First, convert the input string into byte[]
 	bytes, err := hex.DecodeString(input)
 	if err != nil {
@@ -27,7 +27,8 @@ func hex_to_base64(input string) string {
 	return encoded
 }
 
-func xor(a, b []byte) ([]byte, error) {
+// XOR byte-by-byte
+func XOR(a, b []byte) ([]byte, error) {
 	length := len(a)
 	if length != len(b) {
 		return nil, errors.New("lengths are not equal")
@@ -41,37 +42,37 @@ func xor(a, b []byte) ([]byte, error) {
 	return c, nil
 }
 
-var ENGLISH_FREQS = map[rune]float64{
-	'T' : .0910,
-	'E' : .1200,
-	'A' : .0812,
-	'O' : .0768,
-	'I' : .0731,
-	'N' : .0695,
-	'S' : .0628,
-	'R' : .0602,
-	'H' : .0592,
-	'D' : .0432,
-	'L' : .0398,
-	'U' : .0288,
-	'C' : .0271,
-	'M' : .0261,
-	'F' : .0230,
-	'Y' : .0211,
-	'W' : .0209,
-	'G' : .0203,
-	'P' : .0182,
-	'B' : .0149,
-	'V' : .0111,
-	'K' : .0069,
-	'X' : .0017,
-	'Q' : .0011,
-	'J' : .0010,
-	'Z' : .0007,
-}
-
 // Give a score to some English text. Higher score means more likely to be valid English
-func score(text string) float64 {
+func ScoreEnglish(text string) float64 {
+	var ENGLISH_FREQS = map[rune]float64{
+		'T' : .0910,
+		'E' : .1200,
+		'A' : .0812,
+		'O' : .0768,
+		'I' : .0731,
+		'N' : .0695,
+		'S' : .0628,
+		'R' : .0602,
+		'H' : .0592,
+		'D' : .0432,
+		'L' : .0398,
+		'U' : .0288,
+		'C' : .0271,
+		'M' : .0261,
+		'F' : .0230,
+		'Y' : .0211,
+		'W' : .0209,
+		'G' : .0203,
+		'P' : .0182,
+		'B' : .0149,
+		'V' : .0111,
+		'K' : .0069,
+		'X' : .0017,
+		'Q' : .0011,
+		'J' : .0010,
+		'Z' : .0007,
+	}
+
 	// Compute frequencies of letters
 	text = strings.ToUpper(text)
 	freqs := make(map[rune]float64)
@@ -116,12 +117,14 @@ func score(text string) float64 {
 	return score
 }
 
-func fillArray(arr []byte, val byte) {
+// Fill all bytes of input array with specified byte
+func FillArray(arr []byte, val byte) {
 	for i, _ := range(arr) {
 		arr[i] = val
 	}
 }
 
+// Convert byte array to string (note that they're bytes, not runes)
 func BytesToString(x []byte) string {
 	var sb strings.Builder
 	for i := 0; i < len(x); i++ {
@@ -136,7 +139,8 @@ func BytesToString(x []byte) string {
 	return fmt.Sprintf(format_str, tmp...)
 }
 
-func rankByScore(scores map[string]float64) PairList {
+// Rank mappings of english sentence -> score
+func RankByScore(scores map[string]float64) PairList {
 	pl := make(PairList, len(scores))
 	i := 0
 	for k, v := range scores {
@@ -157,4 +161,9 @@ func (p PairList) Len() int { return len(p) }
 func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
 func (p PairList) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
+func RepeatingKeyXOR(input, key []byte) {
+	for i, v := range input {
+		input[i] = v ^ key[i % len(key)]
+	}
+}
 

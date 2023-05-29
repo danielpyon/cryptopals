@@ -37,19 +37,19 @@ func main() {
 		var key byte
 		for key = 0; key < 255; key++ {
 			mask := make([]byte, len(ct))
-			fillArray(mask, key)
+			FillArray(mask, key)
 	
-			result, err := xor(ct, mask)
+			result, err := XOR(ct, mask)
 			if err != nil {
 				panic("not same length")
 			}
 	
 			plaintext := BytesToString(result)
-			scores[plaintext] = score(plaintext)
+			scores[plaintext] = ScoreEnglish(plaintext)
 		}
 	}
 
-	ranked := rankByScore(scores)
+	ranked := RankByScore(scores)
 	i := 0
 	for _, pr := range ranked {
 		if i >= 10 {
