@@ -69,38 +69,10 @@ var ENGLISH_FREQS = map[rune]float64{
 // Higher score means more likely to be valid English
 func score(text string) float64 {
 	// Compute frequencies of letters
-	ENGLISH_FREQS := map[rune]float64{
-		'T' : .0910,
-		'E' : .1200,
-		'A' : .0812,
-		'O' : .0768,
-		'I' : .0731,
-		'N' : .0695,
-		'S' : .0628,
-		'R' : .0602,
-		'H' : .0592,
-		'D' : .0432,
-		'L' : .0398,
-		'U' : .0288,
-		'C' : .0271,
-		'M' : .0261,
-		'F' : .0230,
-		'Y' : .0211,
-		'W' : .0209,
-		'G' : .0203,
-		'P' : .0182,
-		'B' : .0149,
-		'V' : .0111,
-		'K' : .0069,
-		'X' : .0017,
-		'Q' : .0011,
-		'J' : .0010,
-		'Z' : .0007,
-	}
-
 	text = strings.ToUpper(text)
 	freqs := make(map[rune]float64)
 	var num_alphabetic int = 0
+	var num_spaces int = 0
 	for _, ch := range text {
 		if _, ok := freqs[ch]; ok {
 			freqs[ch]++
@@ -112,6 +84,15 @@ func score(text string) float64 {
 		if _, ok := ENGLISH_FREQS[ch]; ok {
 			num_alphabetic++
 		}
+		if ch == ' ' {
+			num_spaces++
+		}
+	}
+
+	// If frequency of alphabetic + space is too low, penalize score
+	ratio := float64(num_alphabetic + num_spaces) / float64(len(text))
+	if ratio <= 0.8 {
+		return -math.MaxFloat64
 	}
 
 	for k := range freqs {
@@ -199,6 +180,10 @@ func main() {
 	fmt.Println("Results:")
 	pl := rankByScore(scores)
 	for i := 0; i < len(pl); i++ {
+		if i > 20 {
+			break
+		}
+
 		p := pl[i]
 		mask := make([]byte, len(input))
 
