@@ -2,38 +2,9 @@ package main
 
 import (
 	"fmt"
-	"errors"
 	"bytes"
 	"encoding/hex"
-	b64 "encoding/base64"
 )
-
-// Converts a hex string to base64
-func hex_to_base64(input string) (string, error) {
-	// First, convert the input string into byte[]
-	bytes, err := hex.DecodeString(input)
-	if err != nil {
-		return "", err
-	}
-
-	// Then, convert the bytes into base64
-	encoded := b64.StdEncoding.EncodeToString(bytes)
-	return encoded, nil
-}
-
-func xor(a, b []byte) ([]byte, error) {
-	length := len(a)
-	if length != len(b) {
-		return nil, errors.New("lengths are not equal")
-	}
-
-	c := make([]byte, length)
-	for i := 0; i < length; i++ {
-		c[i] = a[i] ^ b[i]
-	}
-
-	return c, nil
-}
 
 func main() {
 	a, _ := hex.DecodeString("1c0111001f010100061a024b53535009181c")
