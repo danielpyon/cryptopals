@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"crypto/aes"
+	"io/ioutil"
 	b64 "encoding/base64"
 )
 
@@ -26,6 +28,28 @@ func HexToBase64(input string) string {
 	encoded := b64.StdEncoding.EncodeToString(bytes)
 	return encoded
 }
+
+// Read base64 file and turn it into []byte
+func ReadBase64EncodedFile(filename string) ([]byte, error) {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	split := strings.Split(string(data), "\n")
+	var result string
+	for _, s := range split {
+		result += s
+	}
+
+	dec, err := b64.StdEncoding.DecodeString(result)
+	if err != nil {
+		return nil, err
+	}
+
+	return dec, nil
+}
+
 
 // XOR byte-by-byte
 func XOR(a, b []byte) ([]byte, error) {
@@ -235,3 +259,16 @@ func BreakSingleXORCipherWithKey(ciphertext []byte) (string, byte) {
 	return pt, plaintext_to_key[pt]
 }
 
+/// AES
+
+func DecryptAesEcb(data, key []byte) []byte {
+	cipher, _ := aes.NewCipher(key)
+	decrypted := make([]byte, len(data))
+	size := 16
+
+	for bs, be := 0, size; bs < len(data); bs, be = bs+size, be+size {
+		cipher.Decrypt(decrypted[bs:be], data[bs:be])
+	}
+
+	return decrypted
+}
