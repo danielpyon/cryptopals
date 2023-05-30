@@ -166,3 +166,47 @@ func RepeatingKeyXOR(input, key []byte) {
 	}
 }
 
+func HammingDistance(a, b []byte) (int, error) {
+	if len(a) != len(b) {
+		return 0, errors.New("differing lengths of bytes")
+	}
+
+	hamming_dist := 0
+	length := len(a)
+	for i := 0; i < length; i++ {
+		xor := a[i] ^ b[i]
+		// count the number of ones in xor
+		// because this is the number of differing bit positions
+		dist := 0
+		for j := 0; j < 8; j++ {
+			if xor & 1 == 1 {
+				dist++
+			}
+			xor >>= 1
+		}
+
+		hamming_dist += dist
+	}
+
+	return hamming_dist, nil
+}
+
+func BreakSingleXORCipher(ciphertext []byte) string {
+	var key byte
+	scores := make(map[string]float64)
+	for key = 0; key < 255; key++ {
+		mask := make([]byte, len(ciphertext))
+		FillSlice(mask, key)
+
+		result, err := XOR(ciphertext, mask)
+		if err != nil {
+			panic("not same length")
+		}
+
+		plaintext := BytesToString(result)
+		scores[plaintext] = ScoreEnglish(plaintext)
+	}
+
+	rankings := RankByScore(scores)
+	return rankings[0].Plaintext
+}
