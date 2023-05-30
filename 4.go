@@ -37,7 +37,7 @@ func main() {
 		var key byte
 		for key = 0; key < 255; key++ {
 			mask := make([]byte, len(ct))
-			FillArray(mask, key)
+			FillSlice(mask, key)
 	
 			result, err := XOR(ct, mask)
 			if err != nil {
@@ -56,13 +56,13 @@ func main() {
 			break
 		}
 
-		if pr.Value == 0.0 {
+		if pr.Score == 0.0 {
 			continue
 		} else {
 			i++
 		}
 
-		fmt.Println("String: ", pr.Key, " Value: ", pr.Value)
+		fmt.Println("String: ", pr.Plaintext, " Value: ", pr.Score)
 	}
 	fmt.Println()
 }

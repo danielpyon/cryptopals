@@ -12,7 +12,7 @@ func main() {
 	scores := make(map[string]float64)
 	for key = 0; key < 255; key++ {
 		mask := make([]byte, len(input))
-		FillArray(mask, key)
+		FillSlice(mask, key)
 
 		result, err := XOR(input, mask)
 		if err != nil {
@@ -29,7 +29,7 @@ func main() {
 		if i > 5 {
 			break
 		}
-		fmt.Println("Text: ", rankings[i].Key, " Score: ", rankings[i].Value)
+		fmt.Println("Text: ", rankings[i].Plaintext, " Score: ", rankings[i].Score)
 		fmt.Println()
 	}
 }

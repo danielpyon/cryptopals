@@ -117,8 +117,7 @@ func ScoreEnglish(text string) float64 {
 	return score
 }
 
-// Fill all bytes of input array with specified byte
-func FillArray(arr []byte, val byte) {
+func FillSlice[T any](arr []T, val T) {
 	for i, _ := range(arr) {
 		arr[i] = val
 	}
@@ -139,26 +138,26 @@ func BytesToString(x []byte) string {
 	return fmt.Sprintf(format_str, tmp...)
 }
 
-// Rank mappings of english sentence -> score
+// Rank mappings of plaintext -> score
 func RankByScore(scores map[string]float64) PairList {
-	pl := make(PairList, len(scores))
+	rankings := make(PairList, len(scores))
 	i := 0
 	for k, v := range scores {
-		pl[i] = Pair{k, v}
+		rankings[i] = Pair{k, v}
 		i++
 	}
-	sort.Sort(sort.Reverse(pl))
-	return pl
+	sort.Sort(sort.Reverse(rankings))
+	return rankings
 }
 
 type Pair struct {
-	Key string
-	Value float64
+	Plaintext string
+	Score float64
 }
 
 type PairList []Pair
 func (p PairList) Len() int { return len(p) }
-func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
+func (p PairList) Less(i, j int) bool { return p[i].Score < p[j].Score }
 func (p PairList) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
 func RepeatingKeyXOR(input, key []byte) {
