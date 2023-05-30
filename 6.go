@@ -37,6 +37,36 @@ func Transpose(xs []byte, bins int) [][]byte {
 	return transpose
 }
 
+
+// InvTranspose([[a b c] [d e f] [g h i]]) = adgbehcfi
+func InvTranspose(transpose [][]byte) []byte {
+	// find biggest bin
+	max := math.MinInt
+	for _, bin := range transpose {
+		if len(bin) > max {
+			max = len(bin)
+		}
+	}
+
+	// idea: advance the "head" of each bin
+	// current "head" of bin
+	var ret []byte
+	var i int
+	for i = 0; i < max; i++ {
+		// get the head of each bin
+		var tmp []byte
+		for j := 0; j < len(transpose); j++ {
+			if i < len(transpose[j]) {
+				tmp = append(tmp, transpose[j][i])
+			} else {
+				break
+			}
+		}
+		ret = append(ret, tmp...)
+	}
+	return ret
+}
+
 func main() {
 	fmt.Println("challenge 6")
 	ciphertext := ParseInputFile()
@@ -80,6 +110,10 @@ func main() {
 			}
 			
 			avg := (dist1+dist2+dist3)/3
+
+			// normalize result
+			avg /= key_size
+
 			key_size_to_dist[key_size] = avg
 		}
 	}
@@ -116,5 +150,6 @@ func main() {
 	}
 
 	// step 3:
-
+	x := [][]byte {{1,2,3,10}, {4,5,6,11}, {7,8,9}}
+	fmt.Println(InvTranspose(x))
 }
