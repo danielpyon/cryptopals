@@ -210,3 +210,28 @@ func BreakSingleXORCipher(ciphertext []byte) string {
 	rankings := RankByScore(scores)
 	return rankings[0].Plaintext
 }
+
+func BreakSingleXORCipherWithKey(ciphertext []byte) (string, byte) {
+	var key byte
+	scores := make(map[string]float64)
+	plaintext_to_key := make(map[string]byte)
+	for key = 0; key < 255; key++ {
+		mask := make([]byte, len(ciphertext))
+		FillSlice(mask, key)
+
+		result, err := XOR(ciphertext, mask)
+		if err != nil {
+			panic("not same length")
+		}
+
+		plaintext := BytesToString(result)
+
+		scores[plaintext] = ScoreEnglish(plaintext)
+		plaintext_to_key[plaintext] = key
+	}
+
+	rankings := RankByScore(scores)
+	pt := rankings[0].Plaintext
+	return pt, plaintext_to_key[pt]
+}
+
