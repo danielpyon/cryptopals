@@ -272,3 +272,22 @@ func DecryptAesEcb(data, key []byte) []byte {
 
 	return decrypted
 }
+
+func PadPkcs7(data []byte, blockSize int) []byte {
+	// bytes needed to reach a multiple of blockSize
+	bytesNeeded := blockSize - (len(data) % blockSize)
+
+	padded := make([]byte, len(data) + bytesNeeded)
+	
+	// copy data to padded
+	for i, b := range data {
+		padded[i] = b
+	}
+
+	padByte := byte(bytesNeeded)
+	for i := len(data); i < len(data) + bytesNeeded; i++ {
+		padded[i] = padByte
+	}
+
+	return padded
+}
