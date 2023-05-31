@@ -273,6 +273,18 @@ func DecryptAesEcb(data, key []byte) []byte {
 	return decrypted
 }
 
+func EncryptAesEcb(data, key []byte) []byte {
+	cipher, _ := aes.NewCipher(key)
+	encrypted := make([]byte, len(data))
+	size := 16
+
+	for s, e := 0, size; s < len(data); s, e = s+size, e+size {
+		cipher.Encrypt(encrypted[s:e], data[s:e])
+	}
+
+	return encrypted
+}
+
 func PadPkcs7(data []byte, blockSize int) []byte {
 	// bytes needed to reach a multiple of blockSize
 	bytesNeeded := blockSize - (len(data) % blockSize)
@@ -291,3 +303,4 @@ func PadPkcs7(data []byte, blockSize int) []byte {
 
 	return padded
 }
+
