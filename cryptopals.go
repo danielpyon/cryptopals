@@ -13,6 +13,7 @@ import (
 	"strings"
 	"crypto/aes"
 	"io/ioutil"
+	"crypto/rand"
 	b64 "encoding/base64"
 )
 
@@ -64,6 +65,17 @@ func XOR(a, b []byte) ([]byte, error) {
 	}
 
 	return c, nil
+}
+
+func XorInPlace(dst, src []byte) error {
+	length := len(dst)
+	if length != len(src) {
+		return errors.New("lengths are not equal")
+	}
+	for i, _ := range dst {
+		dst[i] = dst[i] ^ src[i]
+	}
+	return nil
 }
 
 // Give a score to some English text. Higher score means more likely to be valid English
@@ -261,28 +273,46 @@ func BreakSingleXORCipherWithKey(ciphertext []byte) (string, byte) {
 
 /// AES
 
-func DecryptAesEcb(data, key []byte) []byte {
-	cipher, _ := aes.NewCipher(key)
+func DecryptAesEcb(data, key []byte) ([]byte, error) {
+	if len(data) % 16 != 0 {
+		return nil, errors.New("data length is not a multiple of 16")
+	}
+
+	cipher, err := aes.NewCipher(key)
+	
+	if err != nil {
+		return nil, err
+	}
+
 	decrypted := make([]byte, len(data))
 	size := 16
 
-	for bs, be := 0, size; bs < len(data); bs, be = bs+size, be+size {
-		cipher.Decrypt(decrypted[bs:be], data[bs:be])
+	for start, end := 0, size; start < len(data); start, end = start+size, end+size {
+		cipher.Decrypt(decrypted[start:end], data[start:end])
 	}
 
-	return decrypted
+	return decrypted, nil
 }
 
-func EncryptAesEcb(data, key []byte) []byte {
-	cipher, _ := aes.NewCipher(key)
+func EncryptAesEcb(data, key []byte) ([]byte, error) {
+	if len(data) % 16 != 0 {
+		return nil, errors.New("data length is not a multiple of 16")
+	}
+
+	cipher, err := aes.NewCipher(key)
+
+	if err != nil {
+		return nil, err
+	}
+
 	encrypted := make([]byte, len(data))
 	size := 16
 
-	for s, e := 0, size; s < len(data); s, e = s+size, e+size {
-		cipher.Encrypt(encrypted[s:e], data[s:e])
+	for start, end := 0, size; start < len(data); start, end = start+size, end+size {
+		cipher.Encrypt(encrypted[start:end], data[start:end])
 	}
 
-	return encrypted
+	return encrypted, nil
 }
 
 func PadPkcs7(data []byte, blockSize int) []byte {
@@ -303,4 +333,60 @@ func PadPkcs7(data []byte, blockSize int) []byte {
 
 	return padded
 }
+
+// this modifies the original data
+func EncryptAesCbc(data, key []byte) ([]byte, error) {
+	if len(data) % 16 != 0 {
+		return nil, errors.New("data length is not a multiple of 16")
+	}
+	
+	cipher, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	encrypted := make([]byte, 16, len(data) + 16)
+
+	// generate the initialization vector
+	n, err := rand.Read(encrypted)
+	if n != 16 {
+		return nil, errors.New("could not generate random bytes")
+	}
+	
+	if err != nil {
+		return nil, err
+	}
+
+	size := 16
+	for start, end := 0, size; start < len(data); start, end = start+size, end+size {
+		XorInPlace(data[start:end], encrypted[start:end])
+		cipher.Encrypt(encrypted[start+size:end+size], data[start:end])
+	}
+
+	return encrypted[:cap(encrypted)], nil
+}
+
+func DecryptAesCbc(data, key []byte) ([]byte, error) {
+	if len(data) % 16 != 0 {
+		return nil, errors.New("data length is not a multiple of 16")
+	}
+	
+	cipher, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	decrypted := make([]byte, len(data) - 16)
+
+	size := 16
+	for start, end := size, size*2; start < len(data); start, end = start+size, end+size {
+		// indices into decrypted
+		i, j := start-size, end-size
+		cipher.Decrypt(decrypted[i:j], data[start:end])
+		XorInPlace(decrypted[i:j], data[i:j])
+	}
+
+	return decrypted, nil
+}
+
 

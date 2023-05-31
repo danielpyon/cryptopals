@@ -13,6 +13,6 @@ func main() {
 	}
 
 	key := []byte("YELLOW SUBMARINE")
-	plaintext := DecryptAesEcb(ciphertext, key)
+	plaintext, _ := DecryptAesEcb(ciphertext, key)
 	fmt.Println(BytesToString(plaintext))
 }
