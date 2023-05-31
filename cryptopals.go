@@ -13,6 +13,7 @@ import (
 	"strings"
 	"crypto/aes"
 	"io/ioutil"
+	"math/big"
 	"crypto/rand"
 	b64 "encoding/base64"
 )
@@ -51,8 +52,6 @@ func ReadBase64EncodedFile(filename string) ([]byte, error) {
 	return dec, nil
 }
 
-
-// XOR byte-by-byte
 func XOR(a, b []byte) ([]byte, error) {
 	length := len(a)
 	if length != len(b) {
@@ -334,6 +333,21 @@ func PadPkcs7(data []byte, blockSize int) []byte {
 	return padded
 }
 
+// returns slice to passed-in array
+func UnpadPkcs7(data []byte) ([]byte, error) {
+	// last byte guaranteed to be padding byte
+	numPadding := int(data[len(data)-1])
+
+	// the last numPadding bytes should be equal to numPadding
+	for i := 0; i < numPadding; i++ {
+		if data[len(data) - 1 - i] != byte(numPadding) {
+			return nil, errors.New("invalid padding")
+		}
+	}
+
+	return data[:len(data)-numPadding], nil
+}
+
 // this modifies the original data
 func EncryptAesCbc(data, key []byte) ([]byte, error) {
 	if len(data) % 16 != 0 {
@@ -389,5 +403,66 @@ func DecryptAesCbc(data, key []byte) ([]byte, error) {
 	return decrypted, nil
 }
 
+func GenerateAesKey() ([]byte, error) {
+	key := make([]byte, 16)
+	n, err := rand.Read(key)
+	if err != nil {
+		return nil, err
+	}
+	if n != 16 {
+		return nil, errors.New("could not generate random bytes")
+	}
+	return key, nil
+}
 
+// encrypt aes with CBC or ECB (1/2 probability)
+func AesOracle(data []byte) []byte {
+	// random int in [low, high]
+	randInt := func(low, high int64) int64 {
+		diff := high - low + 1
+		val, err := rand.Int(rand.Reader, big.NewInt(diff))
+		if err != nil {
+			panic("failed to generate rand int")
+		}
+		return val.Add(val, big.NewInt(low)).Int64()
+	}
+
+	flipCoin := func() bool {
+		val, err := rand.Int(rand.Reader, big.NewInt(2))
+		if err != nil {
+			panic("failed to flip coin")
+		}
+		return val.Int64() == 1
+	}
+
+	key, _ := GenerateAesKey()
+	
+	// extra bytes appended to front / back of plaintext
+	extraFront, extraBack := int(randInt(5, 10)), int(randInt(5, 10))
+	
+	plaintext := make([]byte, extraFront + len(data) + extraBack)
+	_, err := rand.Read(plaintext[:extraFront])	
+	if err != nil {
+		panic("failed to read random bytes")
+	}
+	_, err = rand.Read(plaintext[len(data)-extraBack:])
+	if err != nil {
+		panic("failed to read random bytes")
+	}
+
+	padded := PadPkcs7(plaintext, 16)
+
+	var ciphertext []byte
+	if flipCoin() {
+		ciphertext, err = EncryptAesEcb(padded, key)
+	} else {
+		ciphertext, err = EncryptAesCbc(padded, key)
+	}
+
+	if err != nil {
+		panic("couldn't encrypt")
+	}
+
+	return ciphertext
+}
 
