@@ -456,19 +456,13 @@ func AesOracle(data []byte) ([]byte, bool) {
 	for i, x := range data {
 		payload[i] = x
 	}
-	fmt.Println(extraFront, extraBack)
-	// 00f668fcc1243e414141414141414141 41414141414141414141414141414175 09f263a76b5af43f7607070707070707
-	// 0749422ba86f15671141414141414141 41414141414141414141414141414141 414141bc69bfb1239458857504040404
-	// afb94fa5586ea00a3d41414141414141 41414141414141414141414141414141 41414141414141414141414141414141 414141e97218bc8d6b541f0505050505
-	// e95c3aebe74141414141414141414141 41414141414141414141414141414141 414141414141414141414141414141a66abf663dfd95268e3507070707070707
 
 	padded := PadPkcs7(plaintext, 16)
-	fmt.Println(hex.EncodeToString(padded))
 
 	var ciphertext []byte
 	var mode bool
 
-	if flipCoin() || true{
+	if flipCoin() {
 		mode = true
 		ciphertext, err = EncryptAesEcb(padded, key)
 	} else {
@@ -490,7 +484,6 @@ func DetectAes() bool {
 	pt := make([]byte, 32+20)
 	FillSlice(pt, 0x41)
 	ct, mode := AesOracle(pt)
-	fmt.Println(hex.EncodeToString(ct))
 
 	// this is the algorithm from problem 8 (detect ECB)
 	ecb := false
@@ -513,9 +506,6 @@ func DetectAes() bool {
 		}
 	}
 
-	fmt.Println("guess: ", ecb)
-	fmt.Println("actual: ", mode)
-
-	return mode == ecb
+	return ecb == mode
 }
 
