@@ -416,7 +416,8 @@ func GenerateAesKey() ([]byte, error) {
 }
 
 // encrypt aes with CBC or ECB (1/2 probability)
-func AesOracle(data []byte) []byte {
+// returns true if ECB mode was used, CBC otherwise
+func AesOracle(data []byte) ([]byte, bool) {
 	// random int in [low, high]
 	randInt := func(low, high int64) int64 {
 		diff := high - low + 1
@@ -445,17 +446,33 @@ func AesOracle(data []byte) []byte {
 	if err != nil {
 		panic("failed to read random bytes")
 	}
-	_, err = rand.Read(plaintext[len(data)-extraBack:])
+	_, err = rand.Read(plaintext[extraFront+len(data):])
 	if err != nil {
 		panic("failed to read random bytes")
 	}
 
+	// copy data to plaintext
+	payload := plaintext[extraFront:]
+	for i, x := range data {
+		payload[i] = x
+	}
+	fmt.Println(extraFront, extraBack)
+	// 00f668fcc1243e414141414141414141 41414141414141414141414141414175 09f263a76b5af43f7607070707070707
+	// 0749422ba86f15671141414141414141 41414141414141414141414141414141 414141bc69bfb1239458857504040404
+	// afb94fa5586ea00a3d41414141414141 41414141414141414141414141414141 41414141414141414141414141414141 414141e97218bc8d6b541f0505050505
+	// e95c3aebe74141414141414141414141 41414141414141414141414141414141 414141414141414141414141414141a66abf663dfd95268e3507070707070707
+
 	padded := PadPkcs7(plaintext, 16)
+	fmt.Println(hex.EncodeToString(padded))
 
 	var ciphertext []byte
-	if flipCoin() {
+	var mode bool
+
+	if flipCoin() || true{
+		mode = true
 		ciphertext, err = EncryptAesEcb(padded, key)
 	} else {
+		mode = false
 		ciphertext, err = EncryptAesCbc(padded, key)
 	}
 
@@ -463,6 +480,42 @@ func AesOracle(data []byte) []byte {
 		panic("couldn't encrypt")
 	}
 
-	return ciphertext
+	return ciphertext, mode
+}
+
+// returns whether it guessed correctly
+func DetectAes() bool {
+	// do 32+20 bytes so even if there are 10 extra bytes added at the front,
+	// we will have 2 blocks mapping to same ciphertext
+	pt := make([]byte, 32+20)
+	FillSlice(pt, 0x41)
+	ct, mode := AesOracle(pt)
+	fmt.Println(hex.EncodeToString(ct))
+
+	// this is the algorithm from problem 8 (detect ECB)
+	ecb := false
+	blocks := make(map[string]bool)
+
+	if len(ct) % 16 == 0 {
+		// check if the ciphertext contains any identical 16 byte blocks
+		for j := 0; j < len(ct); j+=16 {
+			currBlock := ct[j:j+16]
+			currBlockStr := hex.EncodeToString(currBlock)
+
+			_, ok := blocks[currBlockStr]
+			if ok {
+				// the block has been seen before, so this is probably ECB mode
+				ecb = true
+				break
+			} else {
+				blocks[currBlockStr] = true
+			}
+		}
+	}
+
+	fmt.Println("guess: ", ecb)
+	fmt.Println("actual: ", mode)
+
+	return mode == ecb
 }
 
