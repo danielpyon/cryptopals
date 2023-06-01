@@ -8,15 +8,16 @@ import (
 // oracle with persistent key
 type AesOracle struct {
 	key []byte
+	extraData []byte // the data we are trying to leak
 }
 
 func (o *AesOracle) Init() {
 	o.key, _ = GenerateAesKey()
+	o.extraData, _ = ReadBase64EncodedFile("12.txt")
 }
 
 func (o *AesOracle) Encrypt(data []byte) []byte {
-	extraData, _ := ReadBase64EncodedFile("12.txt")
-	plaintext := PadPkcs7(append(data, extraData...), 16)
+	plaintext := PadPkcs7(append(data, o.extraData...), 16)
 	ciphertext, _ := EncryptAesEcb(plaintext, o.key)
 	return ciphertext
 }
@@ -65,12 +66,13 @@ func DetectAes(o *AesOracle) bool {
 
 func main() {
 	fmt.Println("chall 12")
-	
+
 	o := AesOracle{}
 	o.Init()
 
 	// find block size
 	blockSize := FindBlockSize(&o)
+	fmt.Printf("block size: %v\n", blockSize)
 
 	// detect ecb
 	if !DetectAes(&o) {
@@ -78,6 +80,26 @@ func main() {
 		return
 	}
 
-	
+	input := make([]byte, blockSize - 1)
+	FillSlice(input, 0x41)
+	ciphertext := hex.EncodeToString(o.Encrypt(input)[:blockSize])
+
+	// table maps ciphertext -> plaintext that produced the ciphertext
+	table := make(map[string]string)
+	for x := 0; x <= 0xff; x++ {
+		input := make([]byte, blockSize)
+		FillSlice(input, 0x41)
+		input[len(input)-1] = byte(x)
+
+		ct := hex.EncodeToString(o.Encrypt(input)[:blockSize])
+		pt := hex.EncodeToString(input)
+		table[ct] = pt
+	}
+
+	fmt.Println(ciphertext)
+	plaintext, ok := table[ciphertext]
+	fmt.Println(ok)
+	fmt.Println(plaintext)
+
 
 }
