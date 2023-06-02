@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"encoding/json"
 )
 
 func ProfileFor(email string) string {
@@ -46,11 +47,33 @@ func DecryptProfile(encryptedProfile, key []byte) []byte {
 }
 
 
+// check if we have successfully gotten admin role
+func Check(profile, key []byte) bool {
+	decrypted := DecryptProfile(profile, key)
+	
+	var decoded map[string]interface{}
+	if err := json.Unmarshal(decrypted, &decoded); err != nil {
+		return false
+	}
+
+	if decoded["role"] == "admin" {
+		return true
+	}
+	return false
+}
+
 func main() {
 	key, err := GenerateAesKey()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(BytesToString(DecryptProfile(EncryptProfile("foo@bar.com", key), key)))
+	encrypted := EncryptProfile("foo@bar.com", key)
+
+	// using only EncryptProfile, make a profile with role=admin
+	if Check(encrypted, key) {
+		fmt.Println("succeeded")
+	} else {
+		fmt.Println("failed")
+	}
 }
