@@ -82,14 +82,14 @@ func main() {
 
 	// create a bunch of padding before the leak bytes
 	// [block 1 of padding] [block 2 of padding] [block 3 of padding][leak byte]
-	numPaddingBlocks := 2 // # of blocks of padding before the block containing leaked byte
+	numPaddingBlocks := 8 // # of blocks of padding before the block containing leaked byte
+	startOfLeakedBlock := numPaddingBlocks * blockSize
+	
 	var leak []byte
-
 	for numPadding := blockSize * numPaddingBlocks + blockSize - 1; numPadding >= 0; numPadding-- {
 		// create numPadding A's, then get the block containing the leaked byte
 		padding := make([]byte, numPadding)
 		FillSlice(padding, 0x41)
-		startOfLeakedBlock := blockSize * ((numPadding) / blockSize)
 		leakedBlock := o.Encrypt(padding)[startOfLeakedBlock:startOfLeakedBlock+blockSize]
 
 		// table maps from ciphertext to plaintext
@@ -98,21 +98,9 @@ func main() {
 		// use all possible last bytes to construct the table
 		for x := 0; x <= 0xff; x++ {
 			// append the current leak to our padding
-			plaintext := padding[startOfLeakedBlock:]
-
-			if len(leak) != 0 {
-				// number of leaked bytes we should add to the plaintext
-				numNeeded := blockSize - len(plaintext) - 1
-				plaintext = append(plaintext, leak[:numNeeded]...)
-			}
-
+			plaintext := append(padding, leak...)
 			plaintext = append(plaintext, byte(x))
-
-			if len(plaintext) != 16 {
-				fmt.Println(hex.EncodeToString(plaintext))
-				fmt.Println(len(plaintext))
-				panic("fail")
-			}
+			plaintext = plaintext[startOfLeakedBlock:startOfLeakedBlock+blockSize]
 
 			ct := hex.EncodeToString(o.Encrypt(plaintext)[:blockSize])
 			pt := hex.EncodeToString(plaintext)
@@ -128,7 +116,4 @@ func main() {
 		leak = append(leak, leakedByte)
 		fmt.Println(BytesToString(leak))
 	}
-
-	// AAAA AAAA | AAAA AAAA | AAAA AA.. | .... .... | .... .... | .... .... | .... .... | .... ....
-
 }
