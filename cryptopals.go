@@ -6,6 +6,8 @@ package main
 
 import (
 	"encoding/hex"
+	"encoding/json"
+	b64 "encoding/base64"
 	"errors"
 	"math"
 	"fmt"
@@ -14,7 +16,7 @@ import (
 	"crypto/aes"
 	"io/ioutil"
 	"crypto/rand"
-	b64 "encoding/base64"
+	"strconv"
 )
 
 // Converts a hex string to base64
@@ -412,4 +414,29 @@ func GenerateAesKey() ([]byte, error) {
 		return nil, errors.New("could not generate random bytes")
 	}
 	return key, nil
+}
+
+func ParseKeyValue(str string) ([]byte, error) {
+	tokens := strings.Split(str, "&")
+
+	kvs := make(map[string]interface{})
+	for _, token := range tokens {
+		kv := strings.Split(token, "=")
+		k, v := kv[0], kv[1]
+
+		// parse ints
+		i, err := strconv.Atoi(v)
+		if err != nil {
+			kvs[k] = v
+		} else {
+			kvs[k] = i
+		}
+	}
+
+	ret, err := json.Marshal(kvs)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
 }

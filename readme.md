@@ -12,7 +12,7 @@ Set 2
 - [x] Implement PKCS#7 padding
 - [x] Implement CBC mode
 - [x] An ECB/CBC detection oracle
-- [ ] Byte-at-a-time ECB decryption (Simple)
+- [x] Byte-at-a-time ECB decryption (Simple)
 - [ ] ECB cut-and-paste
 - [ ] Byte-at-a-time ECB decryption (Harder)
 - [ ] PKCS#7 padding validation
