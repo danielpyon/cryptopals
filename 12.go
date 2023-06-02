@@ -65,41 +65,70 @@ func DetectAes(o *AesOracle) bool {
 }
 
 func main() {
-	fmt.Println("chall 12")
+	fmt.Println("[+] chall 12")
 
 	o := AesOracle{}
 	o.Init()
 
 	// find block size
 	blockSize := FindBlockSize(&o)
-	fmt.Printf("block size: %v\n", blockSize)
+	fmt.Printf("[+] block size: %v\n", blockSize)
 
 	// detect ecb
 	if !DetectAes(&o) {
-		fmt.Println("ecb mode not used")
+		fmt.Println("[+] ecb mode not used")
 		return
 	}
 
-	input := make([]byte, blockSize - 1)
-	FillSlice(input, 0x41)
-	ciphertext := hex.EncodeToString(o.Encrypt(input)[:blockSize])
+	// create a bunch of padding before the leak bytes
+	// [block 1 of padding] [block 2 of padding] [block 3 of padding][leak byte]
+	numPaddingBlocks := 2 // # of blocks of padding before the block containing leaked byte
+	var leak []byte
 
-	// table maps ciphertext -> plaintext that produced the ciphertext
-	table := make(map[string]string)
-	for x := 0; x <= 0xff; x++ {
-		input := make([]byte, blockSize)
-		FillSlice(input, 0x41)
-		input[len(input)-1] = byte(x)
+	for numPadding := blockSize * numPaddingBlocks + blockSize - 1; numPadding >= 0; numPadding-- {
+		// create numPadding A's, then get the block containing the leaked byte
+		padding := make([]byte, numPadding)
+		FillSlice(padding, 0x41)
+		startOfLeakedBlock := blockSize * ((numPadding) / blockSize)
+		leakedBlock := o.Encrypt(padding)[startOfLeakedBlock:startOfLeakedBlock+blockSize]
 
-		ct := hex.EncodeToString(o.Encrypt(input)[:blockSize])
-		pt := hex.EncodeToString(input)
-		table[ct] = pt
+		// table maps from ciphertext to plaintext
+		table := make(map[string]string)
+
+		// use all possible last bytes to construct the table
+		for x := 0; x <= 0xff; x++ {
+			// append the current leak to our padding
+			plaintext := padding[startOfLeakedBlock:]
+
+			if len(leak) != 0 {
+				// number of leaked bytes we should add to the plaintext
+				numNeeded := blockSize - len(plaintext) - 1
+				plaintext = append(plaintext, leak[:numNeeded]...)
+			}
+
+			plaintext = append(plaintext, byte(x))
+
+			if len(plaintext) != 16 {
+				fmt.Println(hex.EncodeToString(plaintext))
+				fmt.Println(len(plaintext))
+				panic("fail")
+			}
+
+			ct := hex.EncodeToString(o.Encrypt(plaintext)[:blockSize])
+			pt := hex.EncodeToString(plaintext)
+			table[ct] = pt
+		}
+
+		blockStr, ok := table[hex.EncodeToString(leakedBlock)]
+		if !ok {
+			panic("[+] couldn't leak! no entry found in table")
+		}
+		blockBytes, _ := hex.DecodeString(blockStr)
+		leakedByte := blockBytes[len(blockBytes) - 1]
+		leak = append(leak, leakedByte)
+		fmt.Println(BytesToString(leak))
 	}
 
-	fmt.Println(ciphertext)
-	plaintext, ok := table[ciphertext]
-	fmt.Println(ok)
-	fmt.Println(plaintext)
-
+	// AAAA AAAA | AAAA AAAA | AAAA AA.. | .... .... | .... .... | .... .... | .... .... | .... ....
 
 }
