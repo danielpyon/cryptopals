@@ -15,5 +15,5 @@ Set 2
 - [x] Byte-at-a-time ECB decryption (Simple)
 - [x] ECB cut-and-paste
 - [x] Byte-at-a-time ECB decryption (Harder)
-- [ ] PKCS#7 padding validation
+- [x] PKCS#7 padding validation
 - [ ] CBC bitflipping attacks
