@@ -32,8 +32,8 @@ func (o *AesOracle) Init() {
 	o.prefix = make([]byte, count)
 	_, _ = rand.Read(o.prefix)
 
-	fmt.Printf("added %v bytes.\n", count)
-	fmt.Println(hex.EncodeToString(o.prefix))
+	fmt.Printf("[+] added %v bytes.\n", count)
+	fmt.Println("[+] the random bytes:", hex.EncodeToString(o.prefix))
 }
 
 func (o *AesOracle) Encrypt(data []byte) []byte {
@@ -154,21 +154,25 @@ func main() {
 		fmt.Println("[+] ecb mode not used")
 		return
 	}
-
 	
 	/// NEW STUFF FOR PROBLEM 14:
 	// we want to find the number of random bytes that were prepended
 	prefixSize := FindPrefixSize(&o, blockSize)
-	fmt.Println("prefix size: ", prefixSize)
-	return
+	bytesNeededForBlock := blockSize - (prefixSize % blockSize)
+	fmt.Println("[+] prefix size:", prefixSize)
+	fmt.Println("[+] bytes needed for the prefix to become a complete block:", bytesNeededForBlock)
 
-	// create a bunch of padding before the leak bytes
-	// [block 1 of padding] [block 2 of padding] [block 3 of padding][leak byte]
-	numPaddingBlocks := 8 // # of blocks of padding before the block containing leaked byte
+	// first, compute number of blocks from just prefix bytes
+	numPaddingBlocks := (prefixSize + bytesNeededForBlock) / blockSize
+	numPaddingBlocks += 8
+
 	startOfLeakedBlock := numPaddingBlocks * blockSize
-	
+	fmt.Println("[+] number of padding blocks:", numPaddingBlocks)
+	fmt.Println("[+] the start of the leaked block (in bytes):", startOfLeakedBlock)
+
 	var leak []byte
-	for numPadding := blockSize * numPaddingBlocks + blockSize - 1; numPadding >= 0; numPadding-- {
+	for numPadding := startOfLeakedBlock - prefixSize + blockSize - 1; numPadding >= 0; numPadding-- {
+
 		// create numPadding A's, then get the block containing the leaked byte
 		padding := make([]byte, numPadding)
 		FillSlice(padding, 0x41)
@@ -182,10 +186,9 @@ func main() {
 			// append the current leak to our padding
 			plaintext := append(padding, leak...)
 			plaintext = append(plaintext, byte(x))
-			plaintext = plaintext[startOfLeakedBlock:startOfLeakedBlock+blockSize]
 
-			ct := hex.EncodeToString(o.Encrypt(plaintext)[:blockSize])
-			pt := hex.EncodeToString(plaintext)
+			ct := hex.EncodeToString(o.Encrypt(plaintext)[startOfLeakedBlock:startOfLeakedBlock+blockSize])
+			pt := hex.EncodeToString(plaintext[len(plaintext)-blockSize:])
 			table[ct] = pt
 		}
 

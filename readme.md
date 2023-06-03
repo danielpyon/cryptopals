@@ -14,6 +14,6 @@ Set 2
 - [x] An ECB/CBC detection oracle
 - [x] Byte-at-a-time ECB decryption (Simple)
 - [x] ECB cut-and-paste
-- [ ] Byte-at-a-time ECB decryption (Harder)
+- [x] Byte-at-a-time ECB decryption (Harder)
 - [ ] PKCS#7 padding validation
 - [ ] CBC bitflipping attacks

@@ -86,7 +86,7 @@ func main() {
 	startOfLeakedBlock := numPaddingBlocks * blockSize
 	
 	var leak []byte
-	for numPadding := blockSize * numPaddingBlocks + blockSize - 1; numPadding >= 0; numPadding-- {
+	for numPadding := startOfLeakedBlock + blockSize - 1; numPadding >= 0; numPadding-- {
 		// create numPadding A's, then get the block containing the leaked byte
 		padding := make([]byte, numPadding)
 		FillSlice(padding, 0x41)
