@@ -411,28 +411,34 @@ func EncryptAesCtr(data, key []byte, nonce uint64) ([]byte, error) {
 		return nil, err
 	}
 
-	fmt.Println(cipher)
+	encrypted := make([]byte, len(data) + (16 - len(data) % 16))
 
 	var i uint64
 	for i = 0; i < uint64(len(data)); i += 16 {
-		var blockNum uint64 = i / 16
-		fmt.Println("block #", blockNum)
-		if i+16 <= uint64(len(data)) {
-			fmt.Println("size:", len(data[i:i+16]))
-		} else {
-			fmt.Println("size:", len(data[i:]))
-		}
+		blockNum := i / 16
 		
 		// first is the nonce, then the block count
 		ctr := make([]byte, 16)
 		binary.LittleEndian.PutUint64(ctr[:8], nonce)
 		binary.LittleEndian.PutUint64(ctr[8:], blockNum)
 
-		fmt.Println(hex.EncodeToString(ctr))
-		fmt.Println(nonce + blockNum)
+		cipher.Encrypt(encrypted[i:i+16], ctr)
+		start, end := i, i + 16
+
+		if end > uint64(len(data)) {
+			end = uint64(len(data))
+		}
+
+		if err := XorInPlace(encrypted[start:end], data[start:end]); err != nil {
+			return nil, err
+		}
 	}
 
-	return nil, nil
+	return encrypted[:len(data)], nil
+}
+
+func DecryptAesCtr(data, key []byte, nonce uint64) ([]byte, error) {
+	return EncryptAesCtr(data, key, nonce)
 }
 
 func GenerateAesKey() ([]byte, error) {
