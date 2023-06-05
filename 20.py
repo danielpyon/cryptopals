@@ -44,20 +44,22 @@ cts = cts.strip().split('\n')
 cts = list(map(lambda x: ', '.join(x.split(' ')), cts))
 cts = list(map(eval, cts))
 
-# fill unfilled cols with -1 (to make numpy work)
-max_len = -1
+min_len = 1000000
 for ct in cts:
-    max_len = max(max_len, len(ct))
+    min_len = min(min_len, len(ct))
 
 for i in range(len(cts)):
-    while len(cts[i]) < max_len:
-        cts[i].append(-1)
+    if len(cts[i]) > min_len:
+        cts[i] = cts[i][:min_len]
 
 cts = np.array(cts)
 
 # for a column of ciphertext bytes,
 # bruteforce all possible values until we get something that resembles English
-col = cts[:, 1]
+COL_NUM = 0
+col = cts[:, COL_NUM]
+plaintext = np.zeros(cts.shape)
+
 for guess in range(2**8):
     mask = np.array([guess] * cts.shape[0])
     result = np.bitwise_xor(col, mask)
@@ -71,8 +73,9 @@ for guess in range(2**8):
     count = len(lte_Z) + len(lte_z)
 
     if count / len(result) >= 0.8:
-        print(guess)
-        print(result)
         tmp = result.tolist()
         print(list(map(lambda x: chr(x), tmp)))
+        plaintext[:, COL_NUM] = result
         break
+
+print(plaintext)
