@@ -20,7 +20,7 @@ Set 2
 
 Set 3
 - [ ] The CBC padding oracle
-- [ ] Implement CTR, the stream cipher mode
+- [x] Implement CTR, the stream cipher mode
 - [ ] Break fixed-nonce CTR mode using substitutions
 - [ ] Break fixed-nonce CTR statistically
 - [ ] Implement the MT19937 Mersenne Twister RNG
