@@ -86,7 +86,7 @@ for pt in plaintext:
     print(''.join(map(chr, pt.astype(np.int32).tolist())))
 '''
 
-'''
+final_answer = '''
 icfeioopaotabbaatihuwwstatwhsstahtyhihta
 =============================================
  ori rronforeul hnenhhhhnhaeooh eoeener 
@@ -127,4 +127,62 @@ t eyhlase nttog  wurwae eli nehlbeige l
 =============================================
 cakhashwIrottldselewets  e at drtr eyh:s
 =============================================
+'''
+
+# print full plaintext:
+final_answer = final_answer.strip().split('\n')
+data = []
+for i in range(0, len(final_answer), 2):
+    data.append(final_answer[i])
+
+for i in range(len(data[0])):
+    plaintext = ''
+    for j in range(len(data)):
+        plaintext += data[j][i]
+    print(plaintext)
+
+
+'''
+i have met them at c
+coming with vivid fa
+from counter or desk
+eighteenth-century h
+i have passed with a
+or polite meaningles
+or have lingered awh
+polite meaningless w
+and thought before I
+of a mocking tale or
+to please a companio
+around the fire at t
+being certain that t
+but lived where motl
+all changed, changed
+a terrible beauty is
+that woman's days we
+in ignorant good wil
+her nights in argume
+until her voice grew
+what voice more swee
+when young and beaut
+she rode to harriers
+this man had kept a 
+and rode our winged 
+this other his helpe
+was coming into his 
+he might have won fa
+so sensitive his nat
+so daring and sweet 
+this other man I had
+a drunken, vain-glor
+he had done most bit
+to some who are near
+yet I number him in 
+he, too, has resigne
+in the casual comedy
+he, too, has been ch
+transformed utterly:
+a terrible beauty is
+
+hmmm... looks like "Easter, 1916" by Yeats
 '''
