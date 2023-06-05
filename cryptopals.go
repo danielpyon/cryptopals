@@ -485,43 +485,44 @@ func GenerateAesKey() ([]byte, error) {
 //////////////// MT19937-32 \\\\\\\\\\\\\\\\
 
 const (
-	MT19937_W int = 32
-	MT19937_N int = 624
-	MT19937_M int = 397
-	MT19937_R int = 31
-	MT19937_A int = 0x9908b0df
-	MT19937_U int = 11
-	MT19937_D int = 0xffffffff
-	MT19937_S int = 7
-	MT19937_B int = 0x9d2c5680
-	MT19937_T int = 15
-	MT19937_C int = 0xefc60000
-	MT19937_L int = 18
-	MT19937_F int = 1812433253
+	MT19937_W int32 = 32
+	MT19937_N int32 = 624
+	MT19937_M int32 = 397
+	MT19937_R int32 = 31
+	MT19937_A int32 = -1727483681 // 0x9908b0df
+	MT19937_U int32 = 11
+	MT19937_D int32 = -1 // 0xffffffff
+	MT19937_S int32 = 7
+	MT19937_B int32 = -1658038656 // 0x9d2c5680
+	MT19937_T int32 = 15
+	MT19937_C int32 = -272236544 // 0xefc60000
+	MT19937_L int32 = 18
+	MT19937_F int32 = 1812433253
 
-	MT19937_LOWER_MASK int = (1 << MT19937_R) - 1
-	MT19937_UPPER_MASK int = (^MT19937_LOWER_MASK)
+	MT19937_LOWER_MASK int32 = (1 << MT19937_R) - 1
+	MT19937_UPPER_MASK int32 = (^MT19937_LOWER_MASK)
 )
 
 type MT19937 struct {
-	MT []int
-	index int
+	MT []int32
+	index int32
 }
 
-func (mt *MT19937) Init(seed int) {
+func (mt *MT19937) Init(seed int32) {
 	mt.index = MT19937_N
 
-	mt.MT = make([]int, MT19937_N)
+	mt.MT = make([]int32, MT19937_N)
 	mt.MT[0] = seed
 
-	for i := 1; i < MT19937_N; i++ {
+
+	for i := int32(1); i < MT19937_N; i++ {
 		mt.MT[i] = (MT19937_F * (mt.MT[i - 1] ^ (mt.MT[i - 1] >> (MT19937_W - 2))) + i)
 	}
 }
 
 // should not be public
 func (mt *MT19937) twist() {
-	for i := 0; i < MT19937_N; i++ {
+	for i := int32(0); i < MT19937_N; i++ {
 		x := (mt.MT[i] & MT19937_UPPER_MASK) | (mt.MT[(i+1)%MT19937_N] & MT19937_LOWER_MASK)
 		xA := x >> 1
 		if x % 2 != 0 {
@@ -532,6 +533,21 @@ func (mt *MT19937) twist() {
 	mt.index = 0
 }
 
-func (mt *MT19937) Rand() {
+func (mt *MT19937) Rand() (int32, error) {
+	if mt.index >= MT19937_N {
+		if mt.index > MT19937_N {
+			return 0, errors.New("generator was never seeded")
+		}
+		mt.twist()
+	}
+
+	y := mt.MT[mt.index]
+	y ^= (y >> MT19937_U) & MT19937_D
+	y ^= (y << MT19937_S) & MT19937_B
+	y ^= (y << MT19937_T) & MT19937_C
+	y ^= y >> MT19937_L
+
+	mt.index++
+	return y, nil
 }
 
