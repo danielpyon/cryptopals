@@ -20,6 +20,8 @@ import (
 	"strconv"
 )
 
+//////////////// Utility functions \\\\\\\\\\\\\\\\
+
 // Converts a hex string to base64
 func HexToBase64(input string) string {
 	// First, convert the input string into byte[]
@@ -175,6 +177,8 @@ func BytesToString(x []byte) string {
 	return fmt.Sprintf(format_str, tmp...)
 }
 
+//////////////// Basic ciphers \\\\\\\\\\\\\\\\
+
 // Rank mappings of plaintext -> score
 func RankByScore(scores map[string]float64) PairList {
 	rankings := make(PairList, len(scores))
@@ -196,6 +200,31 @@ type PairList []Pair
 func (p PairList) Len() int { return len(p) }
 func (p PairList) Less(i, j int) bool { return p[i].Score < p[j].Score }
 func (p PairList) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+
+func ParseKeyValue(str string) ([]byte, error) {
+	tokens := strings.Split(str, "&")
+
+	kvs := make(map[string]interface{})
+	for _, token := range tokens {
+		kv := strings.Split(token, "=")
+		k, v := kv[0], kv[1]
+
+		// parse ints
+		i, err := strconv.Atoi(v)
+		if err != nil {
+			kvs[k] = v
+		} else {
+			kvs[k] = i
+		}
+	}
+
+	ret, err := json.Marshal(kvs)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
 
 func RepeatingKeyXOR(input, key []byte) {
 	for i, v := range input {
@@ -272,7 +301,7 @@ func BreakSingleXORCipherWithKey(ciphertext []byte) (string, byte) {
 	return pt, plaintext_to_key[pt]
 }
 
-/// AES
+//////////////// AES \\\\\\\\\\\\\\\\
 
 func DecryptAesEcb(data, key []byte) ([]byte, error) {
 	if len(data) % 16 != 0 {
@@ -453,27 +482,56 @@ func GenerateAesKey() ([]byte, error) {
 	return key, nil
 }
 
-func ParseKeyValue(str string) ([]byte, error) {
-	tokens := strings.Split(str, "&")
+//////////////// MT19937-32 \\\\\\\\\\\\\\\\
 
-	kvs := make(map[string]interface{})
-	for _, token := range tokens {
-		kv := strings.Split(token, "=")
-		k, v := kv[0], kv[1]
+const (
+	MT19937_W int = 32
+	MT19937_N int = 624
+	MT19937_M int = 397
+	MT19937_R int = 31
+	MT19937_A int = 0x9908b0df
+	MT19937_U int = 11
+	MT19937_D int = 0xffffffff
+	MT19937_S int = 7
+	MT19937_B int = 0x9d2c5680
+	MT19937_T int = 15
+	MT19937_C int = 0xefc60000
+	MT19937_L int = 18
+	MT19937_F int = 1812433253
 
-		// parse ints
-		i, err := strconv.Atoi(v)
-		if err != nil {
-			kvs[k] = v
-		} else {
-			kvs[k] = i
-		}
-	}
+	MT19937_LOWER_MASK int = (1 << MT19937_R) - 1
+	MT19937_UPPER_MASK int = (^MT19937_LOWER_MASK)
+)
 
-	ret, err := json.Marshal(kvs)
-	if err != nil {
-		return nil, err
-	}
-
-	return ret, nil
+type MT19937 struct {
+	MT []int
+	index int
 }
+
+func (mt *MT19937) Init(seed int) {
+	mt.index = MT19937_N
+
+	mt.MT = make([]int, MT19937_N)
+	mt.MT[0] = seed
+
+	for i := 1; i < MT19937_N; i++ {
+		mt.MT[i] = (MT19937_F * (mt.MT[i - 1] ^ (mt.MT[i - 1] >> (MT19937_W - 2))) + i)
+	}
+}
+
+// should not be public
+func (mt *MT19937) twist() {
+	for i := 0; i < MT19937_N; i++ {
+		x := (mt.MT[i] & MT19937_UPPER_MASK) | (mt.MT[(i+1)%MT19937_N] & MT19937_LOWER_MASK)
+		xA := x >> 1
+		if x % 2 != 0 {
+			xA = xA ^ MT19937_A
+		}
+		mt.MT[i] = mt.MT[(i+MT19937_M)%MT19937_N] ^ xA
+	}
+	mt.index = 0
+}
+
+func (mt *MT19937) Rand() {
+}
+
