@@ -66,15 +66,16 @@ for COL_NUM in range(cts.shape[1]):
         result = np.bitwise_xor(col, mask)
 
         # find fraction of result that is English alphabet
-        gte_A = np.extract(result >= ord('A'), result)
-        lte_Z = np.extract(gte_A <= ord('Z'), gte_A)
+        # gte_A = np.extract(result >= ord('A'), result)
+        # lte_Z = np.extract(gte_A <= ord('Z'), gte_A)
         gte_a = np.extract(result >= ord('a'), result)
-        lte_z = np.extract(gte_A <= ord('z'), gte_A)
+        lte_z = np.extract(gte_a <= ord('z'), gte_a)
         eq_sp = np.extract(result == ord(' '), result)
 
-        count = len(lte_Z) + len(lte_z) + len(eq_sp)
+        # count = len(lte_Z) + len(lte_z) + len(eq_sp)
+        count = len(lte_z) + len(eq_sp)
 
-        if count / len(result) == 1.0:
+        if count / len(result) >= 0.95:
             plaintext[:, COL_NUM] = result
             print(''.join(map(chr, result.tolist())))
             # break
@@ -87,44 +88,43 @@ for pt in plaintext:
 
 '''
 icfeioopaotabbaatihuwwstatwhsstahtyhihta
+=============================================
  ori rronforeul hnenhhhhnhaeooh eoeener 
-________________________________________
+=============================================
+hmogh  ld  oitlta rtaeeidis   id  t, ,at
+=============================================
 aimhaphi apun  eti itn s s msdsrhs  t ne
-________________________________________
+=============================================
+vn tvoatt lnglcr gnl  r r ciea uaoIthtsr
+=============================================
 egceelvehmed ihrwni vyomooognrondm oeofr
+=============================================
   oe ie ooa cvaiooghoodadtmhsitk eno ooi
-________________________________________
+=============================================
+mwunpt mucsteenbmrheiuenehitinhed u,c,rb
+=============================================
 eintaelegkehrdglaatrcn   en tgenowm a ml
-________________________________________
-________________________________________
+=============================================
+ttths iahi et eenns egthorghi r,nhbhshee
+=============================================
+ he-smnntna awd 't v  oau  ava  eoeauad 
+=============================================
+t rceegi g fih,bs ioma drhivenmv  rsas b
+=============================================
 hv edaenb cine e gnionh  ine daama  l ue
+=============================================
 eion nrgetor rcado crdakwst h niorhr bta
+=============================================
 mvrtwielfametehuaoaee rei owis nseiecetu
+=============================================
  i uindeolp h atydr  brpnh oswI-t msoeet
+=============================================
 addrtg sreaaamnys ggseitgehn e g n imnry
+=============================================
 t eyhlase nttog  wurwae eli nehlbeige l 
+=============================================
  fs  ew  oi  teiwimeeuradpsfataoianndcyi
+=============================================
 cakhashwIrottldselewets  e at drtr eyh:s
-
-
-
-i c f e i o o p a o t a b b a a t i h u w w s t a t w h s s t a h t y h i h t a
-  o r i   r r o n f o r e u l   h n e n h h h h n h a e o o h   e o e e n e r  
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-a i m h a p h i   a p u n     e t i   i t n   s   s   m s d s r h s     t   n e
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-e g c e e l v e h m e d   i h r w n i   v y o m o o o g n r o n d m   o e o f r
-    o e   i e   o o a   c v a i o o g h o o d a d t m h s i t k   e n o   o o i
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-e i n t a e l e g k e h r d g l a a t r c n       e n   t g e n o w m   a   m l
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-h v   e d a e n b   c i n e   e   g n i o n h     i n e   d a a m a     l   u e
-e i o n   n r g e t o r   r c a d o   c r d a k w s t   h   n i o r h r   b t a
-m v r t w i e l f a m e t e h u a o a e e   r e i   o w i s   n s e i e c e t u
-  i   u i n d e o l p   h   a t y d r     b r p n h   o s w I - t   m s o e e t
-a d d r t g   s r e a a a m n y s   g g s e i t g e h n   e   g   n   i m n r y
-t   e y h l a s e   n t t o g     w u r w a e   e l i   n e h l b e i g e   l  
-  f s     e w     o i     t e i w i m e e u r a d p s f a t a o i a n n d c y i
-c a k h a s h w I r o t t l d s e l e w e t s     e   a t   d r t r   e y h : s
+=============================================
 '''
