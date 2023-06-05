@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/hex"
 	"encoding/json"
+	"encoding/binary"
 	b64 "encoding/base64"
 	"errors"
 	"math"
@@ -402,6 +403,36 @@ func DecryptAesCbc(data, key []byte) ([]byte, error) {
 	}
 
 	return decrypted, nil
+}
+
+func EncryptAesCtr(data, key []byte, nonce uint64) ([]byte, error) {
+	cipher, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(cipher)
+
+	var i uint64
+	for i = 0; i < uint64(len(data)); i += 16 {
+		var blockNum uint64 = i / 16
+		fmt.Println("block #", blockNum)
+		if i+16 <= uint64(len(data)) {
+			fmt.Println("size:", len(data[i:i+16]))
+		} else {
+			fmt.Println("size:", len(data[i:]))
+		}
+		
+		// first is the nonce, then the block count
+		ctr := make([]byte, 16)
+		binary.LittleEndian.PutUint64(ctr[:8], nonce)
+		binary.LittleEndian.PutUint64(ctr[8:], blockNum)
+
+		fmt.Println(hex.EncodeToString(ctr))
+		fmt.Println(nonce + blockNum)
+	}
+
+	return nil, nil
 }
 
 func GenerateAesKey() ([]byte, error) {
