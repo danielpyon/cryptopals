@@ -28,9 +28,13 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 			panic("failed on mt.Rand()")
 		}
 
+		// y ^= (y >> l)
+		// abcdefghijklmnopqrstuvwxyz123456
+		// 000000000000000000abcdefghijklmn
+		// abcdefghijklmnopqr--------------
 		val ^= (val >> MT19937_L)
-		
-		// step 3
+
+		// y ^= ((y << t) & c), t = 15, c = 0xefc60000
 		// abcdefghijklmnopqrstuvwxyz123456
 		// first, left shift by 15
 		// pqrstuvwxyz123456000000000000000
@@ -45,10 +49,63 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 		// so we need to left shift the value by 15
 		// then AND it with the mask,
 		// then XOR it with our value
-
 		val ^= (val << MT19937_T) & MT19937_C
+		
+		// y ^= ((y << s) & b), s = 7, b = 0x9d2c5680
+		// abcdefghijklmnopqrstuvwxyz123456
+		// hijklmnopqrstuvwxyz1234560000000
+		// 10011101001011000101011010000000
+		// h00klm0o00r0tu000y01034060000000
+
+		// which bits are preserved / recoverable (+ means recoverable)?
+		// -bc-+-g+ij-l-+opq-s+u++x+z123456
+		// then,
+		// x[0] = a ^ h (we know h)
+		// x[3] = d ^ k (can deduce)
+		// x[5] = f ^ m (can deduce)
+		// x[10] = k ^ r (can deduce)
+		// x[12] = m ^ t (we know t)
+		// x[17] = r ^ y (we know y)
+
+		// first, apply the mask
+		// at this point, we have
+		// -bc-e-ghij-l-nopq-stuvwxyz123456
 		val ^= (val << MT19937_S) & MT19937_B
-		val ^= (val >> MT19937_U)
+
+		// x[0] = a ^ h (we know h)
+		val ^= ((val & 0x1000000) << 7)
+		// x[12] = m ^ t (we know t)
+		val ^= ((val & 0x1000) << 7)
+		// x[17] = r ^ y (we know y)
+		val ^= ((val & 0x80) << 7)
+
+		// now, we have
+		// abc-e-ghij-lmnopqrstuvwxyz123456
+
+		// x[10] = k ^ r (can deduce)
+		val ^= ((val & 0x4000) << 7)
+		// abc-e-ghijklmnopqrstuvwxyz123456
+		
+		// x[3] = d ^ k (can deduce)
+		val ^= ((val & 0x200000) << 7)
+		// abcde-ghijklmnopqrstuvwxyz123456
+
+		// x[5] = f ^ m (can deduce)
+		val ^= ((val & 0x80000) << 7)
+		// abcdefghijklmnopqrstuvwxyz123456
+
+
+
+		// y ^= (y >> u), u = 11
+		// abcdefghijklmnopqrstuvwxyz123456
+		// 00000000000abcdefghijklmnopqrstu
+		// abcdefghijk+++++++++++----------
+
+		val ^= (val >> MT19937_U) & 0x1ffc00
+		// at this point, we have
+		// abcdefghijklmnopqrstuv----------
+		val ^= (val >> 11) & 0x3ff
+
 		internalState[index] = val
 	}
 
