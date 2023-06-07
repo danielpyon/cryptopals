@@ -6,7 +6,6 @@ int main(int argc, char** argv) {
     uint output = (uint)strtoul(argv[2], NULL, 0);
 
     srand(seed);
-    
     printf("seed(%u): %u\n", seed, rand());
     exit(1);
     

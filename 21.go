@@ -6,7 +6,8 @@ import (
 
 func main() {
 	mt := &MT19937{}
-	mt.Init(19650218)
+	var seed uint32 = 19650218
+	mt.Init(seed)
 	x, err := mt.Rand()
 
 	if err != nil {
@@ -14,5 +15,5 @@ func main() {
 		return
 	}
 
-	fmt.Println(x)
+	fmt.Printf("%d\n", x)
 }
