@@ -17,6 +17,7 @@ import (
 	"crypto/aes"
 	"io/ioutil"
 	"crypto/rand"
+	"math/big"
 	"strconv"
 )
 
@@ -175,6 +176,15 @@ func BytesToString(x []byte) string {
 		tmp[i] = val
 	}
 	return fmt.Sprintf(format_str, tmp...)
+}
+
+func randInt(low, high int64) int64 {
+	diff := high - low + 1
+	val, err := rand.Int(rand.Reader, big.NewInt(diff))
+	if err != nil {
+		panic("failed to generate rand int")
+	}
+	return val.Add(val, big.NewInt(low)).Int64()
 }
 
 //////////////// Basic ciphers \\\\\\\\\\\\\\\\
