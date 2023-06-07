@@ -16,17 +16,12 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 		we want to reverse this:
 
 		0. y = MT[index]
-		1. y_new = y_old ^ (y_old >> u)
-		2. y_new = y_old ^ ((y_old << s) & b)
-		3. y_new = y_old ^ ((y_old << t) & c)
-		4. y_new = y_old ^ (y_old >> l)
+		1. y ^= (y >> u)
+		2. y ^= ((y << s) & b)
+		3. y ^= ((y << t) & c)
+		4. y ^= (y >> l)
 		*/
 
-		// 4. y_new = y_old ^ (y_old >> l)
-		// 11110101010101011111010101010101
-		// 00000000000000000011110101010101
-		// the top l bits are part of y_old
-		// then, XOR the bottom 32-l bits with the top 32-l bits
 		val, err := mt.Rand()
 
 		if err != nil {
@@ -34,6 +29,23 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 		}
 
 		val ^= (val >> MT19937_L)
+		
+		// step 3
+		// abcdefghijklmnopqrstuvwxyz123456
+		// first, left shift by 15
+		// pqrstuvwxyz123456000000000000000
+
+		// then, apply AND mask
+		// pqrstuvwxyz123456000000000000000
+		// AND
+		// 11101111110001100000000000000000
+		// =
+		// pqr0tuvwxy0003400000000000000000
+		
+		// so we need to left shift the value by 15
+		// then AND it with the mask,
+		// then XOR it with our value
+
 		val ^= (val << MT19937_T) & MT19937_C
 		val ^= (val << MT19937_S) & MT19937_B
 		val ^= (val >> MT19937_U)
