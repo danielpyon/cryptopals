@@ -6,7 +6,7 @@ import (
 
 func main() {
 	mt := &MT19937{}
-	mt.Init(1686101924)
+	mt.Init(19650218)
 	x, err := mt.Rand()
 
 	if err != nil {
