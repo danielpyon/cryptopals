@@ -24,6 +24,6 @@ Set 3
 - [ ] Break fixed-nonce CTR mode using substitutions
 - [x] Break fixed-nonce CTR statistically
 - [x] Implement the MT19937 Mersenne Twister RNG
-- [ ] Crack an MT19937 seed
+- [x] Crack an MT19937 seed
 - [ ] Clone an MT19937 RNG from its output
 - [ ] Create the MT19937 stream cipher and break it
