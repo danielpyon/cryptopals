@@ -560,3 +560,24 @@ func (mt *MT19937) Rand() (uint32, error) {
 	return y, nil
 }
 
+func EncryptMT19937(data []byte, seed uint16) ([]byte, error) {
+	// 1) create a MT19937 object with given seed
+	mt := &MT19937{}
+	mt.Init(uint32(seed))
+
+	// 2) use the random bytes to encrypt the ciphertext
+	encrypted := make([]byte, len(data))
+	for i, _ := range data {
+		val, err := mt.Rand()
+		if err != nil {
+			return nil, err
+		}
+		encrypted[i] = data[i] ^ byte(val)
+	}
+
+	return encrypted, nil
+}
+
+func DecryptMT19937(data []byte, seed uint16) ([]byte, error) {
+	return EncryptMT19937(data, seed)
+}
