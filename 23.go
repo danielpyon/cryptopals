@@ -28,12 +28,14 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 			panic("failed on mt.Rand()")
 		}
 
+		/// step 1
 		// y ^= (y >> l)
 		// abcdefghijklmnopqrstuvwxyz123456
 		// 000000000000000000abcdefghijklmn
 		// abcdefghijklmnopqr--------------
 		val ^= (val >> MT19937_L)
 
+		/// step 2
 		// y ^= ((y << t) & c), t = 15, c = 0xefc60000
 		// abcdefghijklmnopqrstuvwxyz123456
 		// first, left shift by 15
@@ -45,12 +47,14 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 		// 11101111110001100000000000000000
 		// =
 		// pqr0tuvwxy0003400000000000000000
-		
+		// +++d++++++klm++pqrstuvwxyz123456
+
 		// so we need to left shift the value by 15
 		// then AND it with the mask,
 		// then XOR it with our value
 		val ^= (val << MT19937_T) & MT19937_C
 		
+		/// step 3
 		// y ^= ((y << s) & b), s = 7, b = 0x9d2c5680
 		// abcdefghijklmnopqrstuvwxyz123456
 		// hijklmnopqrstuvwxyz1234560000000
@@ -67,10 +71,36 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 		// x[12] = m ^ t (we know t)
 		// x[17] = r ^ y (we know y)
 
-		// first, apply the mask
 		// at this point, we have
-		// -bc-e-ghij-l-nopq-stuvwxyz123456
-		val ^= (val << MT19937_S) & MT19937_B
+		// -bc-+-g+ij-l-+opq-s+u++x+z123456
+
+		// recover y
+		val ^= (val & 1) << 7
+		// -bc-+-g+ij-l-+opq-s+u++xyz123456
+
+		// recover w
+		val ^= (val & 0x4) << 7
+		// -bc-+-g+ij-l-+opq-s+u+wxyz123456
+
+		// recover v
+		val ^= (val & 0x8) << 7
+		// -bc-+-g+ij-l-+opq-s+uvwxyz123456
+
+		// recover t
+		val ^= (val & 0x20) << 7
+		// -bc-+-g+ij-l-+opq-stuvwxyz123456
+
+		// recover n
+		val ^= (val & 0x800) << 7
+		// -bc-+-g+ij-l-nopqrstuvwxyz123456
+
+		// recover h
+		val ^= (val & 0x20000) << 7
+		// -bc-+-ghij-l-nopqrstuvwxyz123456
+
+		// recover e
+		val ^= (val & 0x100000) << 7
+		// -bc-e-ghij-l-nopqrstuvwxyz123456
 
 		// x[0] = a ^ h (we know h)
 		val ^= ((val & 0x1000000) << 7)
@@ -92,9 +122,9 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 
 		// x[5] = f ^ m (can deduce)
 		val ^= ((val & 0x80000) << 7)
+
+		/// step 4
 		// abcdefghijklmnopqrstuvwxyz123456
-
-
 
 		// y ^= (y >> u), u = 11
 		// abcdefghijklmnopqrstuvwxyz123456
@@ -121,6 +151,36 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 
 func main() {
 	fmt.Println("[+] === chall 23 ===")
+
+	var val uint32 = 1234567899
+	orig := val
+	fmt.Printf("before:       %32b\n", val)
+	val ^= ((val << MT19937_S) & MT19937_B)
+	val ^= ((val << MT19937_T) & MT19937_C)
+	val ^= (val >> MT19937_L)
+	// after mangle
+	fmt.Printf("after mangle: %32b\n", val)
+
+	val ^= (val >> MT19937_L)
+	val ^= (val << MT19937_T) & MT19937_C
+	val ^= (val & 1) << 7
+	val ^= (val & 0x4) << 7
+	val ^= (val & 0x8) << 7
+	val ^= (val & 0x20) << 7
+	val ^= (val & 0x800) << 7
+	val ^= (val & 0x20000) << 7
+	val ^= (val & 0x100000) << 7
+	fmt.Printf("after half rev%32b\n", val)
+
+	val ^= ((val & 0x1000000) << 7)
+	val ^= ((val & 0x1000) << 7)
+	val ^= ((val & 0x80) << 7)
+	val ^= ((val & 0x4000) << 7)
+	val ^= ((val & 0x200000) << 7)
+	val ^= ((val & 0x80000) << 7)
+
+	fmt.Printf("after:        %32b\n", val)
+	fmt.Println(orig == val)
 
 	// first, make an MT
 	seed := uint32(time.Now().Unix())
