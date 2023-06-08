@@ -152,36 +152,6 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 func main() {
 	fmt.Println("[+] === chall 23 ===")
 
-	var val uint32 = 1234567899
-	orig := val
-	fmt.Printf("before:       %32b\n", val)
-	val ^= ((val << MT19937_S) & MT19937_B)
-	val ^= ((val << MT19937_T) & MT19937_C)
-	val ^= (val >> MT19937_L)
-	// after mangle
-	fmt.Printf("after mangle: %32b\n", val)
-
-	val ^= (val >> MT19937_L)
-	val ^= (val << MT19937_T) & MT19937_C
-	val ^= (val & 1) << 7
-	val ^= (val & 0x4) << 7
-	val ^= (val & 0x8) << 7
-	val ^= (val & 0x20) << 7
-	val ^= (val & 0x800) << 7
-	val ^= (val & 0x20000) << 7
-	val ^= (val & 0x100000) << 7
-	fmt.Printf("after half rev%32b\n", val)
-
-	val ^= ((val & 0x1000000) << 7)
-	val ^= ((val & 0x1000) << 7)
-	val ^= ((val & 0x80) << 7)
-	val ^= ((val & 0x4000) << 7)
-	val ^= ((val & 0x200000) << 7)
-	val ^= ((val & 0x80000) << 7)
-
-	fmt.Printf("after:        %32b\n", val)
-	fmt.Println(orig == val)
-
 	// first, make an MT
 	seed := uint32(time.Now().Unix())
 	mt := &MT19937{}
