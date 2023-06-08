@@ -43,6 +43,27 @@ func FindKey(ciphertext []byte) uint16 {
 	return i
 }
 
+func TokenFromMT19937(token []byte) bool {
+	n := len(token)
+
+	i := uint16(0)
+	for ; i < 0xffff; i++ {
+		zeros := make([]byte, n)
+		FillSlice(zeros, 0)
+
+		guess, err := EncryptMT19937(zeros, i)
+		if err != nil {
+			panic("failed to decrypt")
+		}
+
+		if SliceEq(token, guess) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func main() {
 	fmt.Println("[+] === chall 24 ===")
 
@@ -69,4 +90,12 @@ func main() {
 	// now we're gonna attack the cipher
 	key := FindKey(ciphertext)
 	fmt.Println("found key:", key)
+
+
+	// make a token
+	token, err := EncryptMT19937([]byte("\x00\x00\x00\x00"), seed)
+	if err != nil {
+		panic("could not generate random bytes!")
+	}
+	fmt.Println(TokenFromMT19937(token))
 }
