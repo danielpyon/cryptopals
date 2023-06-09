@@ -5,20 +5,20 @@
 package main
 
 import (
+	"crypto/aes"
+	"crypto/rand"
+	b64 "encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"encoding/binary"
-	b64 "encoding/base64"
 	"errors"
-	"math"
 	"fmt"
-	"sort"
-	"strings"
-	"crypto/aes"
 	"io/ioutil"
-	"crypto/rand"
+	"math"
 	"math/big"
+	"sort"
 	"strconv"
+	"strings"
 )
 
 //////////////// Utility functions \\\\\\\\\\\\\\\\
@@ -85,32 +85,32 @@ func XorInPlace(dst, src []byte) error {
 // Give a score to some English text. Higher score means more likely to be valid English
 func ScoreEnglish(text string) float64 {
 	var ENGLISH_FREQS = map[rune]float64{
-		'T' : .0910,
-		'E' : .1200,
-		'A' : .0812,
-		'O' : .0768,
-		'I' : .0731,
-		'N' : .0695,
-		'S' : .0628,
-		'R' : .0602,
-		'H' : .0592,
-		'D' : .0432,
-		'L' : .0398,
-		'U' : .0288,
-		'C' : .0271,
-		'M' : .0261,
-		'F' : .0230,
-		'Y' : .0211,
-		'W' : .0209,
-		'G' : .0203,
-		'P' : .0182,
-		'B' : .0149,
-		'V' : .0111,
-		'K' : .0069,
-		'X' : .0017,
-		'Q' : .0011,
-		'J' : .0010,
-		'Z' : .0007,
+		'T': .0910,
+		'E': .1200,
+		'A': .0812,
+		'O': .0768,
+		'I': .0731,
+		'N': .0695,
+		'S': .0628,
+		'R': .0602,
+		'H': .0592,
+		'D': .0432,
+		'L': .0398,
+		'U': .0288,
+		'C': .0271,
+		'M': .0261,
+		'F': .0230,
+		'Y': .0211,
+		'W': .0209,
+		'G': .0203,
+		'P': .0182,
+		'B': .0149,
+		'V': .0111,
+		'K': .0069,
+		'X': .0017,
+		'Q': .0011,
+		'J': .0010,
+		'Z': .0007,
 	}
 
 	// Compute frequencies of letters
@@ -135,7 +135,7 @@ func ScoreEnglish(text string) float64 {
 	}
 
 	// If frequency of alphabetic + space is too low, penalize score
-	ratio := float64(num_alphabetic + num_spaces) / float64(len(text))
+	ratio := float64(num_alphabetic+num_spaces) / float64(len(text))
 	if ratio <= 0.8 {
 		return -math.MaxFloat64
 	}
@@ -158,7 +158,7 @@ func ScoreEnglish(text string) float64 {
 }
 
 func FillSlice[T any](arr []T, val T) {
-	for i, _ := range(arr) {
+	for i, _ := range arr {
 		arr[i] = val
 	}
 }
@@ -203,13 +203,14 @@ func RankByScore(scores map[string]float64) PairList {
 
 type Pair struct {
 	Plaintext string
-	Score float64
+	Score     float64
 }
 
 type PairList []Pair
-func (p PairList) Len() int { return len(p) }
+
+func (p PairList) Len() int           { return len(p) }
 func (p PairList) Less(i, j int) bool { return p[i].Score < p[j].Score }
-func (p PairList) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p PairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 func ParseKeyValue(str string) ([]byte, error) {
 	tokens := strings.Split(str, "&")
@@ -238,7 +239,7 @@ func ParseKeyValue(str string) ([]byte, error) {
 
 func RepeatingKeyXOR(input, key []byte) {
 	for i, v := range input {
-		input[i] = v ^ key[i % len(key)]
+		input[i] = v ^ key[i%len(key)]
 	}
 }
 
@@ -255,7 +256,7 @@ func HammingDistance(a, b []byte) (int, error) {
 		// because this is the number of differing bit positions
 		dist := 0
 		for j := 0; j < 8; j++ {
-			if xor & 1 == 1 {
+			if xor&1 == 1 {
 				dist++
 			}
 			xor >>= 1
@@ -314,12 +315,12 @@ func BreakSingleXORCipherWithKey(ciphertext []byte) (string, byte) {
 //////////////// AES \\\\\\\\\\\\\\\\
 
 func DecryptAesEcb(data, key []byte) ([]byte, error) {
-	if len(data) % 16 != 0 {
+	if len(data)%16 != 0 {
 		return nil, errors.New("data length is not a multiple of 16")
 	}
 
 	cipher, err := aes.NewCipher(key)
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +336,7 @@ func DecryptAesEcb(data, key []byte) ([]byte, error) {
 }
 
 func EncryptAesEcb(data, key []byte) ([]byte, error) {
-	if len(data) % 16 != 0 {
+	if len(data)%16 != 0 {
 		return nil, errors.New("data length is not a multiple of 16")
 	}
 
@@ -359,15 +360,15 @@ func PadPkcs7(data []byte, blockSize int) []byte {
 	// bytes needed to reach a multiple of blockSize
 	bytesNeeded := blockSize - (len(data) % blockSize)
 
-	padded := make([]byte, len(data) + bytesNeeded)
-	
+	padded := make([]byte, len(data)+bytesNeeded)
+
 	// copy data to padded
 	for i, b := range data {
 		padded[i] = b
 	}
 
 	padByte := byte(bytesNeeded)
-	for i := len(data); i < len(data) + bytesNeeded; i++ {
+	for i := len(data); i < len(data)+bytesNeeded; i++ {
 		padded[i] = padByte
 	}
 
@@ -381,7 +382,7 @@ func UnpadPkcs7(data []byte) ([]byte, error) {
 
 	// the last numPadding bytes should be equal to numPadding
 	for i := 0; i < numPadding; i++ {
-		if data[len(data) - 1 - i] != byte(numPadding) {
+		if data[len(data)-1-i] != byte(numPadding) {
 			return nil, errors.New("invalid padding")
 		}
 	}
@@ -391,23 +392,23 @@ func UnpadPkcs7(data []byte) ([]byte, error) {
 
 // this modifies the original data
 func EncryptAesCbc(data, key []byte) ([]byte, error) {
-	if len(data) % 16 != 0 {
+	if len(data)%16 != 0 {
 		return nil, errors.New("data length is not a multiple of 16")
 	}
-	
+
 	cipher, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 
-	encrypted := make([]byte, 16, len(data) + 16)
+	encrypted := make([]byte, 16, len(data)+16)
 
 	// generate the initialization vector
 	n, err := rand.Read(encrypted)
 	if n != 16 {
 		return nil, errors.New("could not generate random bytes")
 	}
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -422,16 +423,16 @@ func EncryptAesCbc(data, key []byte) ([]byte, error) {
 }
 
 func DecryptAesCbc(data, key []byte) ([]byte, error) {
-	if len(data) % 16 != 0 {
+	if len(data)%16 != 0 {
 		return nil, errors.New("data length is not a multiple of 16")
 	}
-	
+
 	cipher, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 
-	decrypted := make([]byte, len(data) - 16)
+	decrypted := make([]byte, len(data)-16)
 
 	size := 16
 	for start, end := size, size*2; start < len(data); start, end = start+size, end+size {
@@ -450,19 +451,19 @@ func EncryptAesCtr(data, key []byte, nonce uint64) ([]byte, error) {
 		return nil, err
 	}
 
-	encrypted := make([]byte, len(data) + (16 - len(data) % 16))
+	encrypted := make([]byte, len(data)+(16-len(data)%16))
 
 	var i uint64
 	for i = 0; i < uint64(len(data)); i += 16 {
 		blockNum := i / 16
-		
+
 		// first is the nonce, then the block count
 		ctr := make([]byte, 16)
 		binary.LittleEndian.PutUint64(ctr[:8], nonce)
 		binary.LittleEndian.PutUint64(ctr[8:], blockNum)
 
 		cipher.Encrypt(encrypted[i:i+16], ctr)
-		start, end := i, i + 16
+		start, end := i, i+16
 
 		if end > uint64(len(data)) {
 			end = uint64(len(data))
@@ -514,7 +515,7 @@ const (
 )
 
 type MT19937 struct {
-	MT []uint32
+	MT    []uint32
 	index uint32
 }
 
@@ -525,7 +526,7 @@ func (mt *MT19937) Init(seed uint32) {
 	mt.MT[0] = seed
 
 	for i := uint32(1); i < MT19937_N; i++ {
-		mt.MT[i] = (MT19937_F * (mt.MT[i - 1] ^ (mt.MT[i - 1] >> (MT19937_W - 2)))) + i
+		mt.MT[i] = (MT19937_F * (mt.MT[i-1] ^ (mt.MT[i-1] >> (MT19937_W - 2)))) + i
 	}
 }
 
@@ -534,7 +535,7 @@ func (mt *MT19937) twist() {
 	for i := uint32(0); i < MT19937_N; i++ {
 		x := (mt.MT[i] & MT19937_UPPER_MASK) | (mt.MT[(i+1)%MT19937_N] & MT19937_LOWER_MASK)
 		xA := x >> 1
-		if x % 2 != 0 {
+		if x%2 != 0 {
 			xA ^= MT19937_A
 		}
 		mt.MT[i] = mt.MT[(i+MT19937_M)%MT19937_N] ^ xA
