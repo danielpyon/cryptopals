@@ -1,14 +1,14 @@
 package main
 
 import (
+	b64 "encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"strings"
-	b64 "encoding/base64"
-	// "encoding/hex"
 )
 
-func main () {
+func main() {
 	fmt.Println("[+] === chall 19 ===")
 
 	// get ciphertexts
@@ -39,7 +39,8 @@ func main () {
 	}
 
 	for _, ct := range cts {
-		fmt.Println(ct)
-		// fmt.Println(hex.EncodeToString(ct))
+		// fmt.Println(ct)
+		fmt.Println(hex.EncodeToString(ct))
 	}
+
 }
