@@ -2,52 +2,69 @@ package main
 
 import (
 	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
 )
 
-func Edit(ciphertext, key []byte, nonce uint64, offset int, newtext []byte) {
-	if offset < 0 || offset >= len(ciphertext) || offset+len(newtext) > len(ciphertext) {
-		panic("invalid offset")
+type KeyStream struct {
+	key          []byte
+	nonce        uint64
+	offset       uint64
+	currBlockNum uint64
+	currBlock    []byte
+
+	cipher cipher.Block
+}
+
+func (ks *KeyStream) Init(key []byte, nonce uint64, offset uint64) {
+	ks.key = key
+	ks.nonce = nonce
+	ks.offset = offset
+
+	ks.currBlockNum = 0
+	ks.currBlock = nil
+
+	var err error
+	ks.cipher, err = aes.NewCipher(key)
+	if err != nil {
+		panic("Could not create a cipher.")
+	}
+}
+
+func (ks *KeyStream) NextByte() byte {
+	// determine if we should get a new block
+	blockNum := ks.offset / 16
+	if ks.currBlockNum != blockNum || ks.currBlock == nil {
+		ks.currBlockNum = blockNum
+		ks.currBlock = make([]byte, 16)
+		binary.LittleEndian.PutUint64(ks.currBlock[:8], ks.nonce)
+		binary.LittleEndian.PutUint64(ks.currBlock[8:], ks.currBlockNum)
+		ks.cipher.Encrypt(ks.currBlock, ks.currBlock)
 	}
 
-	cipher, err := aes.NewCipher(key)
+	ret := ks.currBlock[ks.offset%16]
+	ks.offset++
+
+	return ret
+}
+
+func Edit(ciphertext, key []byte, nonce, offset uint64, newText []byte) {
+	if offset < 0 || int(offset) >= len(ciphertext) || int(offset)+len(newText) > len(ciphertext) {
+		panic("Invalid offset.")
+	}
+
+	_, err := aes.NewCipher(key)
 	if err != nil {
 		panic("failed to create cipher")
 	}
 
-	i := offset
-	total := 0
-	for {
-		startOfBlock := i
-		if i%16 != 0 {
-			startOfBlock = i - i%16
-			total += 16 - i%16
-		} else {
-			total += 16
-		}
+	ks := &KeyStream{}
+	ks.Init(key, nonce, offset)
 
-		if total+16 < len(newtext) {
-			i = startOfBlock + 16
-		} else {
-
-		}
-	}
-
-	// First, get the keystream bytes
-	keystream := make([]byte, len(newtext))
-	j := 0
-	for i := offset - (offset % 16); i < offset+len(newtext); i += 16 {
-		blockNum := uint64(i / 16)
-		ctr := make([]byte, 16)
-		binary.LittleEndian.PutUint64(ctr[:8], nonce)
-		binary.LittleEndian.PutUint64(ctr[8:], blockNum)
-
-		tmp := make([]byte, 16)
-		cipher.Encrypt(tmp, ctr)
-		copy(keystream[i:i+16], tmp)
-		j += 16
+	for i := 0; i < len(newText); i++ {
+		ciphertext[offset+uint64(i)] = ks.NextByte() ^ newText[i]
 	}
 }
 
@@ -72,14 +89,22 @@ func main() {
 	}
 
 	// edit the CT to all zeros to get the bytes from the keystream
-	newtext := make([]byte, len(ct))
-	FillSlice(newtext, 0x00)
+	newText := make([]byte, len(ct))
+	FillSlice(newText, 0x00)
 
 	// copy the ct
 	keystream := make([]byte, len(ct))
 	copy(keystream, ct)
-	Edit(keystream, key, 0, newtext)
+	Edit(keystream, key, 0, 0, newText)
 
 	// now, just xor the keystream with the data
 	XorInPlace(ct, keystream)
+
+	// now, ct should equal pt
+	for i := range ct {
+		if pt[i] != ct[i] {
+			panic("Recovered plaintext is not equal to the original plaintext!")
+		}
+	}
+	fmt.Println("Successfully recovered plaintext!")
 }
