@@ -32,7 +32,7 @@ Set 4
 - [x] Break "random access read/write" AES CTR
 - [x] CTR bitflipping
 - [x] Recover the key from CBC with IV=Key
-- [ ] Implement a SHA-1 keyed MAC
+- [x] Implement a SHA-1 keyed MAC
 - [ ] Break a SHA-1 keyed MAC using length extension
 - [ ] Break an MD4 keyed MAC using length extension
 - [ ] Implement and break HMAC-SHA1 with an artificial timing leak

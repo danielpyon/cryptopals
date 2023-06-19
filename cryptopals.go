@@ -582,3 +582,5 @@ func EncryptMT19937(data []byte, seed uint16) ([]byte, error) {
 func DecryptMT19937(data []byte, seed uint16) ([]byte, error) {
 	return EncryptMT19937(data, seed)
 }
+
+//////////////// MACs \\\\\\\\\\\\\\\\
