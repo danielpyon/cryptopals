@@ -584,3 +584,11 @@ func DecryptMT19937(data []byte, seed uint16) ([]byte, error) {
 }
 
 //////////////// MACs \\\\\\\\\\\\\\\\
+
+const (
+	SHA1_H0 uint32 = 0x67452301
+	SHA1_H1 uint32 = 0xEFCDAB89
+	SHA1_H2 uint32 = 0x98BADCFE
+	SHA1_H3 uint32 = 0x10325476
+	SHA1_H4 uint32 = 0xC3D2E1F0
+)

@@ -6,12 +6,14 @@ import (
 	"fmt"
 )
 
+func GetTag(key, message string) []byte {
+	tag := sha1.Sum([]byte(key + message))
+	return tag[:]
+}
+
 func main() {
 	key := "yellow submarine"
 
-	tag1 := sha1.Sum([]byte(key + "hello world"))
-	fmt.Println(hex.EncodeToString(tag1[:]))
-
-	tag2 := sha1.Sum([]byte(key + "hello world!"))
-	fmt.Println(hex.EncodeToString(tag2[:]))
+	fmt.Println(hex.EncodeToString(GetTag(key, "hello world")))
+	fmt.Println(hex.EncodeToString(GetTag(key, "hello world!")))
 }
