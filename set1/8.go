@@ -1,13 +1,14 @@
-package main
+package set1
 
 import (
-	"fmt"
 	"encoding/hex"
-	"strings"
+	"fmt"
 	"io/ioutil"
+	"strings"
 )
 
-func ParseInputFile() [][]byte {
+func Test8() {
+	// get the input file
 	data, err := ioutil.ReadFile("8.txt")
 	if err != nil {
 		panic("couldn't read file!")
@@ -20,11 +21,7 @@ func ParseInputFile() [][]byte {
 		result[i], _ = hex.DecodeString(s)
 	}
 
-	return result
-}
-
-func main() {
-	contents := ParseInputFile()
+	contents := result
 
 	for _, ct := range contents {
 		// store a set of blocks
@@ -35,13 +32,13 @@ func main() {
 		// is this block encrypted with ecb mode?
 		ecb := false
 
-		if len(ct) % 16 != 0 {
+		if len(ct)%16 != 0 {
 			continue
 		}
 
 		// check if the ciphertext contains any identical 16 byte blocks
-		for j := 0; j < len(ct); j+=16 {
-			currBlock := ct[j:j+16]
+		for j := 0; j < len(ct); j += 16 {
+			currBlock := ct[j : j+16]
 			currBlockStr := hex.EncodeToString(currBlock)
 
 			_, ok := blocks[currBlockStr]

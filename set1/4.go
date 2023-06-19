@@ -1,13 +1,42 @@
-package main
+package set1
 
 import (
-	"fmt"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"strings"
+
+	"github.com/danielpyon/cryptopals/lib"
 )
 
-func ParseInputFile() [][]byte {
+func HammingDistance(a, b []byte) (int, error) {
+	if len(a) != len(b) {
+		return 0, errors.New("differing lengths of bytes")
+	}
+
+	hamming_dist := 0
+	length := len(a)
+	for i := 0; i < length; i++ {
+		xor := a[i] ^ b[i]
+		// count the number of ones in xor
+		// because this is the number of differing bit positions
+		dist := 0
+		for j := 0; j < 8; j++ {
+			if xor&1 == 1 {
+				dist++
+			}
+			xor >>= 1
+		}
+
+		hamming_dist += dist
+	}
+
+	return hamming_dist, nil
+}
+
+func Test4() {
+	// get the array of ciphertexts
 	data, err := ioutil.ReadFile("4.txt")
 	if err != nil {
 		panic("failed to read file!")
@@ -21,30 +50,25 @@ func ParseInputFile() [][]byte {
 		}
 		ret[i] = bytes
 	}
-	return ret
-}
+	cts := ret
 
-func main() {
-	// array of ciphertexts
-	cts := ParseInputFile()
-	
 	// map from string to its score
 	scores := make(map[string]float64)
-	
+
 	// populate scores map
 	for _, ct := range cts {
 		// for each ciphertext, compute scores with all possible keys
 		var key byte
 		for key = 0; key < 255; key++ {
 			mask := make([]byte, len(ct))
-			FillSlice(mask, key)
-	
-			result, err := XOR(ct, mask)
+			lib.FillSlice(mask, key)
+
+			result, err := Xor(ct, mask)
 			if err != nil {
 				panic("not same length")
 			}
-	
-			plaintext := BytesToString(result)
+
+			plaintext := lib.BytesToString(result)
 			scores[plaintext] = ScoreEnglish(plaintext)
 		}
 	}
