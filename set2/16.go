@@ -1,9 +1,7 @@
 package set2
 
 import (
-	"fmt"
 	"strings"
-	"testing"
 
 	"github.com/danielpyon/cryptopals/lib"
 )
@@ -51,30 +49,5 @@ func (o *CbcOracle) IsAdmin(ciphertext []byte) bool {
 		return false
 	} else {
 		return strings.Contains(lib.BytesToString(unpadded), ";admin=true;")
-	}
-}
-
-func Test16(t *testing.T) {
-	fmt.Println("[+] === chall 16 ===")
-
-	o := CbcOracle{}
-	o.Init()
-	ct := o.Encrypt("AAAAAAAAAAAAAAAA:admin<true:AAAA")
-
-	// the ciphertext looks like this:
-	// init-vector comment1=cooking %20MCs;userdata= AAAAAAAAAAAAAAAA :admin<true:AAAA ;comment2=%20lik e%20a%20pound%20 of%20bacon\x06\x06\x06\x06\x06\x06
-	// note that instead of ";admin=true;", we have ":admin<true:"
-	// this is because we will flip the corresponding bits
-
-	// flip bits
-	block := 3 // we must modify the PREVIOUS block
-	ct[block*16] ^= 1
-	ct[block*16+6] ^= 1
-	ct[block*16+11] ^= 1
-
-	if o.IsAdmin(ct) {
-		fmt.Println("success!")
-	} else {
-		fmt.Println("fail!")
 	}
 }
