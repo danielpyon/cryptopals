@@ -1,32 +1,41 @@
-package main
+package set2
 
 import (
-	"fmt"
 	"encoding/hex"
+	"fmt"
+	"testing"
+
+	"github.com/danielpyon/cryptopals/lib"
+	"github.com/danielpyon/cryptopals/set1"
 )
 
+type Oracle interface {
+	Init()
+	Encrypt([]byte) []byte
+}
+
 // oracle with persistent key
-type AesOracle struct {
-	key []byte
+type AesOraclePersistentKey struct {
+	key       []byte
 	extraData []byte // the data we are trying to leak
 }
 
-func (o *AesOracle) Init() {
-	o.key, _ = GenerateAesKey()
-	o.extraData, _ = ReadBase64EncodedFile("12.txt")
+func (o *AesOraclePersistentKey) Init() {
+	o.key, _ = lib.GenerateAesKey()
+	o.extraData, _ = set1.ReadBase64EncodedFile("12.txt")
 }
 
-func (o *AesOracle) Encrypt(data []byte) []byte {
-	plaintext := PadPkcs7(append(data, o.extraData...), 16)
-	ciphertext, _ := EncryptAesEcb(plaintext, o.key)
+func (o *AesOraclePersistentKey) Encrypt(data []byte) []byte {
+	plaintext := lib.PadPkcs7(append(data, o.extraData...), 16)
+	ciphertext, _ := lib.EncryptAesEcb(plaintext, o.key)
 	return ciphertext
 }
 
-func FindBlockSize(o *AesOracle) int {
+func FindBlockSize(o Oracle) int {
 	pt := []byte("A")
 	initialLen := len(o.Encrypt(pt))
 	currLen := initialLen
-	for ; currLen == initialLen; {
+	for currLen == initialLen {
 		pt = append(pt, 0x41)
 		currLen = len(o.Encrypt(pt))
 	}
@@ -34,19 +43,19 @@ func FindBlockSize(o *AesOracle) int {
 }
 
 // returns true if ECB mode was used
-func DetectAes(o *AesOracle) bool {
+func DetectAesPersistentKey(o *AesOraclePersistentKey) bool {
 	pt := make([]byte, 32+20)
-	FillSlice(pt, 0x41)
+	lib.FillSlice(pt, 0x41)
 
 	ct := o.Encrypt(pt)
 
 	ecb := false
 	blocks := make(map[string]bool)
 
-	if len(ct) % 16 == 0 {
+	if len(ct)%16 == 0 {
 		// check if the ciphertext contains any identical 16 byte blocks
-		for j := 0; j < len(ct); j+=16 {
-			currBlock := ct[j:j+16]
+		for j := 0; j < len(ct); j += 16 {
+			currBlock := ct[j : j+16]
 			currBlockStr := hex.EncodeToString(currBlock)
 
 			_, ok := blocks[currBlockStr]
@@ -64,10 +73,10 @@ func DetectAes(o *AesOracle) bool {
 	}
 }
 
-func main() {
+func Test12(t *testing.T) {
 	fmt.Println("[+] chall 12")
 
-	o := AesOracle{}
+	o := AesOraclePersistentKey{}
 	o.Init()
 
 	// find block size
@@ -75,7 +84,7 @@ func main() {
 	fmt.Printf("[+] block size: %v\n", blockSize)
 
 	// detect ecb
-	if !DetectAes(&o) {
+	if !DetectAesPersistentKey(&o) {
 		fmt.Println("[+] ecb mode not used")
 		return
 	}
@@ -84,13 +93,13 @@ func main() {
 	// [block 1 of padding] [block 2 of padding] [block 3 of padding][leak byte]
 	numPaddingBlocks := 8 // # of blocks of padding before the block containing leaked byte
 	startOfLeakedBlock := numPaddingBlocks * blockSize
-	
+
 	var leak []byte
 	for numPadding := startOfLeakedBlock + blockSize - 1; numPadding >= 0; numPadding-- {
 		// create numPadding A's, then get the block containing the leaked byte
 		padding := make([]byte, numPadding)
-		FillSlice(padding, 0x41)
-		leakedBlock := o.Encrypt(padding)[startOfLeakedBlock:startOfLeakedBlock+blockSize]
+		lib.FillSlice(padding, 0x41)
+		leakedBlock := o.Encrypt(padding)[startOfLeakedBlock : startOfLeakedBlock+blockSize]
 
 		// table maps from ciphertext to plaintext
 		table := make(map[string]string)
@@ -100,7 +109,7 @@ func main() {
 			// append the current leak to our padding
 			plaintext := append(padding, leak...)
 			plaintext = append(plaintext, byte(x))
-			plaintext = plaintext[startOfLeakedBlock:startOfLeakedBlock+blockSize]
+			plaintext = plaintext[startOfLeakedBlock : startOfLeakedBlock+blockSize]
 
 			ct := hex.EncodeToString(o.Encrypt(plaintext)[:blockSize])
 			pt := hex.EncodeToString(plaintext)
@@ -112,8 +121,8 @@ func main() {
 			panic("[+] couldn't leak! no entry found in table")
 		}
 		blockBytes, _ := hex.DecodeString(blockStr)
-		leakedByte := blockBytes[len(blockBytes) - 1]
+		leakedByte := blockBytes[len(blockBytes)-1]
 		leak = append(leak, leakedByte)
-		fmt.Println(BytesToString(leak))
+		fmt.Println(lib.BytesToString(leak))
 	}
 }

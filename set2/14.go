@@ -1,32 +1,25 @@
-package main
+package set2
 
 import (
-	"fmt"
-	"encoding/hex"
 	"crypto/rand"
-	"math/big"
+	"encoding/hex"
+	"fmt"
+	"testing"
+
+	"github.com/danielpyon/cryptopals/lib"
+	"github.com/danielpyon/cryptopals/set1"
 )
 
 // oracle with persistent key
-type AesOracle struct {
-	key []byte
+type AesOraclePersistentKeyRandomBytes struct {
+	key       []byte
 	extraData []byte // the data we are trying to leak
-	prefix []byte
+	prefix    []byte
 }
 
-func (o *AesOracle) Init() {
-	o.key, _ = GenerateAesKey()
-	o.extraData, _ = ReadBase64EncodedFile("12.txt")
-
-	// generate some random bytes to prepend
-	randInt := func(low, high int64) int64 {
-		diff := high - low + 1
-		val, err := rand.Int(rand.Reader, big.NewInt(diff))
-		if err != nil {
-			panic("failed to generate rand int")
-		}
-		return val.Add(val, big.NewInt(low)).Int64()
-	}
+func (o *AesOraclePersistentKeyRandomBytes) Init() {
+	o.key, _ = lib.GenerateAesKey()
+	o.extraData, _ = set1.ReadBase64EncodedFile("12.txt")
 
 	count := randInt(1, 32)
 	o.prefix = make([]byte, count)
@@ -36,79 +29,37 @@ func (o *AesOracle) Init() {
 	fmt.Println("[+] the random bytes:", hex.EncodeToString(o.prefix))
 }
 
-func (o *AesOracle) Encrypt(data []byte) []byte {
+func (o *AesOraclePersistentKeyRandomBytes) Encrypt(data []byte) []byte {
 	// append extra data to end (the thing we're trying to leak)
 	payload := append(data, o.extraData...)
 	// prepend random bytes to the front
 	payload = append(o.prefix, payload...)
 
-	plaintext := PadPkcs7(payload, 16)
-	ciphertext, _ := EncryptAesEcb(plaintext, o.key)
+	plaintext := lib.PadPkcs7(payload, 16)
+	ciphertext, _ := lib.EncryptAesEcb(plaintext, o.key)
 	return ciphertext
 }
 
-func FindBlockSize(o *AesOracle) int {
-	pt := []byte("A")
-	initialLen := len(o.Encrypt(pt))
-	currLen := initialLen
-	for ; currLen == initialLen; {
-		pt = append(pt, 0x41)
-		currLen = len(o.Encrypt(pt))
-	}
-	return currLen - initialLen
-}
-
-// returns true if ECB mode was used
-func DetectAes(o *AesOracle) bool {
-	pt := make([]byte, 32+20)
-	FillSlice(pt, 0x41)
-
-	ct := o.Encrypt(pt)
-
-	ecb := false
-	blocks := make(map[string]bool)
-
-	if len(ct) % 16 == 0 {
-		// check if the ciphertext contains any identical 16 byte blocks
-		for j := 0; j < len(ct); j+=16 {
-			currBlock := ct[j:j+16]
-			currBlockStr := hex.EncodeToString(currBlock)
-
-			_, ok := blocks[currBlockStr]
-			if ok {
-				// the block has been seen before, so this is probably ECB mode
-				ecb = true
-				break
-			} else {
-				blocks[currBlockStr] = true
-			}
-		}
-		return ecb
-	} else {
-		return false
-	}
-}
-
 // find the number of blocks that were prepended (the prefix)
-func FindPrefixSize(o *AesOracle, blockSize int) int {
+func FindPrefixSize(o Oracle, blockSize int) int {
 	// increase the number of A's until there are two identical blocks.
 	// then, you'll have something like:
 	// ciphertext = prefix + A...A | AAA...A | AAA...A | secret
-	
+
 	// so just return the number of bytes before the first AAA...A block
 	// MINUS the number of A's required mod block size
 
 	padding := []byte("A")
 	for {
 		ct := o.Encrypt(padding)
-		
+
 		// find identical blocks
 		identicalBlocksFound := false
 		var identicalBlock string
 
 		blocks := make(map[string]bool)
 		for i := 0; i < len(ct); i += blockSize {
-			block := hex.EncodeToString(ct[i:i+blockSize])
+			block := hex.EncodeToString(ct[i : i+blockSize])
 			if _, ok := blocks[block]; ok {
 				identicalBlocksFound = true
 				identicalBlock = block
@@ -126,7 +77,7 @@ func FindPrefixSize(o *AesOracle, blockSize int) int {
 					break
 				}
 			}
-			
+
 			if prefixSize == -1 {
 				return -1
 			}
@@ -139,10 +90,41 @@ func FindPrefixSize(o *AesOracle, blockSize int) int {
 	}
 }
 
-func main() {
+// returns true if ECB mode was used
+func DetectAesO(o Oracle) bool {
+	pt := make([]byte, 32+20)
+	lib.FillSlice(pt, 0x41)
+
+	ct := o.Encrypt(pt)
+
+	ecb := false
+	blocks := make(map[string]bool)
+
+	if len(ct)%16 == 0 {
+		// check if the ciphertext contains any identical 16 byte blocks
+		for j := 0; j < len(ct); j += 16 {
+			currBlock := ct[j : j+16]
+			currBlockStr := hex.EncodeToString(currBlock)
+
+			_, ok := blocks[currBlockStr]
+			if ok {
+				// the block has been seen before, so this is probably ECB mode
+				ecb = true
+				break
+			} else {
+				blocks[currBlockStr] = true
+			}
+		}
+		return ecb
+	} else {
+		return false
+	}
+}
+
+func Test14(t *testing.T) {
 	fmt.Println("[+] chall 14")
 
-	o := AesOracle{}
+	o := AesOraclePersistentKeyRandomBytes{}
 	o.Init()
 
 	// find block size
@@ -150,11 +132,11 @@ func main() {
 	fmt.Printf("[+] block size: %v\n", blockSize)
 
 	// detect ecb
-	if !DetectAes(&o) {
+	if !DetectAesO(&o) {
 		fmt.Println("[+] ecb mode not used")
 		return
 	}
-	
+
 	/// NEW STUFF FOR PROBLEM 14:
 	// we want to find the number of random bytes that were prepended
 	prefixSize := FindPrefixSize(&o, blockSize)
@@ -175,8 +157,8 @@ func main() {
 
 		// create numPadding A's, then get the block containing the leaked byte
 		padding := make([]byte, numPadding)
-		FillSlice(padding, 0x41)
-		leakedBlock := o.Encrypt(padding)[startOfLeakedBlock:startOfLeakedBlock+blockSize]
+		lib.FillSlice(padding, 0x41)
+		leakedBlock := o.Encrypt(padding)[startOfLeakedBlock : startOfLeakedBlock+blockSize]
 
 		// table maps from ciphertext to plaintext
 		table := make(map[string]string)
@@ -187,7 +169,7 @@ func main() {
 			plaintext := append(padding, leak...)
 			plaintext = append(plaintext, byte(x))
 
-			ct := hex.EncodeToString(o.Encrypt(plaintext)[startOfLeakedBlock:startOfLeakedBlock+blockSize])
+			ct := hex.EncodeToString(o.Encrypt(plaintext)[startOfLeakedBlock : startOfLeakedBlock+blockSize])
 			pt := hex.EncodeToString(plaintext[len(plaintext)-blockSize:])
 			table[ct] = pt
 		}
@@ -197,8 +179,8 @@ func main() {
 			panic("[+] couldn't leak! no entry found in table")
 		}
 		blockBytes, _ := hex.DecodeString(blockStr)
-		leakedByte := blockBytes[len(blockBytes) - 1]
+		leakedByte := blockBytes[len(blockBytes)-1]
 		leak = append(leak, leakedByte)
-		fmt.Println(BytesToString(leak))
+		fmt.Println(lib.BytesToString(leak))
 	}
 }

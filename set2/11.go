@@ -1,25 +1,26 @@
-package main
+package set2
 
 import (
-	"fmt"
-	"math/big"
 	"crypto/rand"
 	"encoding/hex"
+	"math/big"
+
+	"github.com/danielpyon/cryptopals/lib"
 )
+
+// random int in [low, high]
+func randInt(low, high int64) int64 {
+	diff := high - low + 1
+	val, err := rand.Int(rand.Reader, big.NewInt(diff))
+	if err != nil {
+		panic("failed to generate rand int")
+	}
+	return val.Add(val, big.NewInt(low)).Int64()
+}
 
 // encrypt aes with CBC or ECB (1/2 probability)
 // returns true if ECB mode was used, CBC otherwise
 func AesOracle(data []byte) ([]byte, bool) {
-	// random int in [low, high]
-	randInt := func(low, high int64) int64 {
-		diff := high - low + 1
-		val, err := rand.Int(rand.Reader, big.NewInt(diff))
-		if err != nil {
-			panic("failed to generate rand int")
-		}
-		return val.Add(val, big.NewInt(low)).Int64()
-	}
-
 	flipCoin := func() bool {
 		val, err := rand.Int(rand.Reader, big.NewInt(2))
 		if err != nil {
@@ -28,13 +29,13 @@ func AesOracle(data []byte) ([]byte, bool) {
 		return val.Int64() == 1
 	}
 
-	key, _ := GenerateAesKey()
-	
+	key, _ := lib.GenerateAesKey()
+
 	// extra bytes appended to front / back of plaintext
 	extraFront, extraBack := int(randInt(5, 10)), int(randInt(5, 10))
-	
-	plaintext := make([]byte, extraFront + len(data) + extraBack)
-	_, err := rand.Read(plaintext[:extraFront])	
+
+	plaintext := make([]byte, extraFront+len(data)+extraBack)
+	_, err := rand.Read(plaintext[:extraFront])
 	if err != nil {
 		panic("failed to read random bytes")
 	}
@@ -49,17 +50,17 @@ func AesOracle(data []byte) ([]byte, bool) {
 		payload[i] = x
 	}
 
-	padded := PadPkcs7(plaintext, 16)
+	padded := lib.PadPkcs7(plaintext, 16)
 
 	var ciphertext []byte
 	var mode bool
 
 	if flipCoin() {
 		mode = true
-		ciphertext, err = EncryptAesEcb(padded, key)
+		ciphertext, err = lib.EncryptAesEcb(padded, key)
 	} else {
 		mode = false
-		ciphertext, err = EncryptAesCbc(padded, key)
+		ciphertext, err = lib.EncryptAesCbc(padded, key)
 	}
 
 	if err != nil {
@@ -74,17 +75,17 @@ func DetectAes() bool {
 	// do 32+20 bytes so even if there are 10 extra bytes added at the front,
 	// we will have 2 blocks mapping to same ciphertext
 	pt := make([]byte, 32+20)
-	FillSlice(pt, 0x41)
+	lib.FillSlice(pt, 0x41)
 	ct, mode := AesOracle(pt)
 
 	// this is the algorithm from problem 8 (detect ECB)
 	ecb := false
 	blocks := make(map[string]bool)
 
-	if len(ct) % 16 == 0 {
+	if len(ct)%16 == 0 {
 		// check if the ciphertext contains any identical 16 byte blocks
-		for j := 0; j < len(ct); j+=16 {
-			currBlock := ct[j:j+16]
+		for j := 0; j < len(ct); j += 16 {
+			currBlock := ct[j : j+16]
 			currBlockStr := hex.EncodeToString(currBlock)
 
 			_, ok := blocks[currBlockStr]
@@ -99,17 +100,4 @@ func DetectAes() bool {
 	}
 
 	return ecb == mode
-}
-
-func main() {
-	total := 100
-	correct := 0
-	for i := 0; i < total; i++ {
-		if DetectAes() {
-			correct++
-		}
-	}
-
-	percentage := float32(correct) / float32(total) * 100.0
-	fmt.Printf("%v%% correct\n", percentage)
 }

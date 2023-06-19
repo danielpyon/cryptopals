@@ -1,8 +1,11 @@
-package main
+package set2
 
 import (
 	"fmt"
 	"strings"
+	"testing"
+
+	"github.com/danielpyon/cryptopals/lib"
 )
 
 type CbcOracle struct {
@@ -11,7 +14,7 @@ type CbcOracle struct {
 
 func (o *CbcOracle) Init() {
 	var err error
-	o.key, err = GenerateAesKey()
+	o.key, err = lib.GenerateAesKey()
 
 	if err != nil {
 		panic("Could not generate AES key")
@@ -26,10 +29,10 @@ func (o *CbcOracle) Encrypt(userData string) []byte {
 	userData = strings.ReplaceAll(userData, "=", "")
 	userData = strings.ReplaceAll(userData, ";", "")
 
-	plaintext := PadPkcs7([]byte(pre + userData + post), 16)
+	plaintext := lib.PadPkcs7([]byte(pre+userData+post), 16)
 
 	var ciphertext []byte
-	ciphertext, err := EncryptAesCbc(plaintext, o.key)
+	ciphertext, err := lib.EncryptAesCbc(plaintext, o.key)
 	if err != nil {
 		panic("Could not encrypt plaintext")
 	}
@@ -38,20 +41,20 @@ func (o *CbcOracle) Encrypt(userData string) []byte {
 }
 
 func (o *CbcOracle) IsAdmin(ciphertext []byte) bool {
-	plaintext, err := DecryptAesCbc(ciphertext, o.key)
+	plaintext, err := lib.DecryptAesCbc(ciphertext, o.key)
 	if err != nil {
 		panic("Could not decrypt ciphertext")
 	}
 
-	unpadded, err := UnpadPkcs7(plaintext)
+	unpadded, err := lib.UnpadPkcs7(plaintext)
 	if err != nil {
 		return false
 	} else {
-		return strings.Contains(BytesToString(unpadded), ";admin=true;")
+		return strings.Contains(lib.BytesToString(unpadded), ";admin=true;")
 	}
 }
 
-func main() {
+func Test16(t *testing.T) {
 	fmt.Println("[+] === chall 16 ===")
 
 	o := CbcOracle{}
@@ -65,9 +68,9 @@ func main() {
 
 	// flip bits
 	block := 3 // we must modify the PREVIOUS block
-	ct[block * 16] ^= 1
-	ct[block * 16 + 6] ^= 1
-	ct[block * 16 + 11] ^= 1
+	ct[block*16] ^= 1
+	ct[block*16+6] ^= 1
+	ct[block*16+11] ^= 1
 
 	if o.IsAdmin(ct) {
 		fmt.Println("success!")

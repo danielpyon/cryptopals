@@ -1,10 +1,39 @@
-package main
+package set2
 
 import (
-	"fmt"
-	"strings"
 	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
+	"testing"
+
+	"github.com/danielpyon/cryptopals/lib"
 )
+
+func ParseKeyValue(str string) ([]byte, error) {
+	tokens := strings.Split(str, "&")
+
+	kvs := make(map[string]interface{})
+	for _, token := range tokens {
+		kv := strings.Split(token, "=")
+		k, v := kv[0], kv[1]
+
+		// parse ints
+		i, err := strconv.Atoi(v)
+		if err != nil {
+			kvs[k] = v
+		} else {
+			kvs[k] = i
+		}
+	}
+
+	ret, err := json.Marshal(kvs)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
 
 func ProfileFor(email string) string {
 	// delete &, = from email
@@ -16,9 +45,9 @@ func ProfileFor(email string) string {
 
 func EncryptProfile(email string, key []byte) []byte {
 	encoded := []byte(ProfileFor(email))
-	padded := PadPkcs7(encoded, 16)
+	padded := lib.PadPkcs7(encoded, 16)
 
-	encryptedProfile, err := EncryptAesEcb(padded, key)
+	encryptedProfile, err := lib.EncryptAesEcb(padded, key)
 	if err != nil {
 		panic(err)
 	}
@@ -27,17 +56,17 @@ func EncryptProfile(email string, key []byte) []byte {
 }
 
 func DecryptProfile(encryptedProfile, key []byte) []byte {
-	profile, err := DecryptAesEcb(encryptedProfile, key)
+	profile, err := lib.DecryptAesEcb(encryptedProfile, key)
 	if err != nil {
 		panic(err)
 	}
 
-	unpadded, err := UnpadPkcs7(profile)
+	unpadded, err := lib.UnpadPkcs7(profile)
 	if err != nil {
 		panic(err)
 	}
 
-	profileStr := BytesToString(unpadded)
+	profileStr := lib.BytesToString(unpadded)
 	kvs, err := ParseKeyValue(profileStr)
 	if err != nil {
 		panic(err)
@@ -46,11 +75,10 @@ func DecryptProfile(encryptedProfile, key []byte) []byte {
 	return kvs
 }
 
-
 // check if we have successfully gotten admin role
 func Check(profile, key []byte) bool {
 	decrypted := DecryptProfile(profile, key)
-	
+
 	var decoded map[string]interface{}
 	if err := json.Unmarshal(decrypted, &decoded); err != nil {
 		return false
@@ -62,8 +90,8 @@ func Check(profile, key []byte) bool {
 	return false
 }
 
-func main() {
-	key, err := GenerateAesKey()
+func Test13(t *testing.T) {
+	key, err := lib.GenerateAesKey()
 	if err != nil {
 		panic(err)
 	}
@@ -94,4 +122,3 @@ func main() {
 		fmt.Println("failed")
 	}
 }
-
