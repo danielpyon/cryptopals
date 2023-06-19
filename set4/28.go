@@ -1,9 +1,9 @@
-package main
+package set4
 
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"fmt"
+	"testing"
 )
 
 func GetTag(key, message string) []byte {
@@ -11,9 +11,10 @@ func GetTag(key, message string) []byte {
 	return tag[:]
 }
 
-func main() {
+func Test28(t *testing.T) {
 	key := "yellow submarine"
 
-	fmt.Println(hex.EncodeToString(GetTag(key, "hello world")))
-	fmt.Println(hex.EncodeToString(GetTag(key, "hello world!")))
+	if hex.EncodeToString(GetTag(key, "hello world")) == hex.EncodeToString(GetTag(key, "hello world!")) {
+		t.Errorf("MAC tag should be different for different messages")
+	}
 }

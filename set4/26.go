@@ -1,9 +1,10 @@
-package main
+package set4
 
 import (
-	"fmt"
 	"math/rand"
 	"strings"
+
+	"github.com/danielpyon/cryptopals/lib"
 )
 
 type CtrOracle struct {
@@ -13,7 +14,7 @@ type CtrOracle struct {
 
 func (o *CtrOracle) Init() {
 	var err error
-	o.key, err = GenerateAesKey()
+	o.key, err = lib.GenerateAesKey()
 	o.nonce = rand.Uint64()
 
 	if err != nil {
@@ -29,10 +30,10 @@ func (o *CtrOracle) Encrypt(userData string) []byte {
 	userData = strings.ReplaceAll(userData, "=", "")
 	userData = strings.ReplaceAll(userData, ";", "")
 
-	plaintext := PadPkcs7([]byte(pre+userData+post), 16)
+	plaintext := lib.PadPkcs7([]byte(pre+userData+post), 16)
 
 	var ciphertext []byte
-	ciphertext, err := EncryptAesCtr(plaintext, o.key, o.nonce)
+	ciphertext, err := lib.EncryptAesCtr(plaintext, o.key, o.nonce)
 	if err != nil {
 		panic("Could not encrypt plaintext")
 	}
@@ -41,40 +42,15 @@ func (o *CtrOracle) Encrypt(userData string) []byte {
 }
 
 func (o *CtrOracle) IsAdmin(ciphertext []byte) bool {
-	plaintext, err := DecryptAesCtr(ciphertext, o.key, o.nonce)
+	plaintext, err := lib.DecryptAesCtr(ciphertext, o.key, o.nonce)
 	if err != nil {
 		panic("Could not decrypt ciphertext")
 	}
 
-	unpadded, err := UnpadPkcs7(plaintext)
+	unpadded, err := lib.UnpadPkcs7(plaintext)
 	if err != nil {
 		return false
 	} else {
-		return strings.Contains(BytesToString(unpadded), ";admin=true;")
-	}
-}
-
-func main() {
-	fmt.Println("[+] === chall 26 ===")
-
-	o := CtrOracle{}
-	o.Init()
-	ct := o.Encrypt(":admin<true:AAAA")
-
-	// the ciphertext looks like this:
-	// comment1=cooking %20MCs;userdata= :admin<true:AAAA ;comment2=%20lik e%20a%20pound%20 of%20bacon\x06\x06\x06\x06\x06\x06
-	// note that instead of ";admin=true;", we have ":admin<true:"
-	// this is because we will flip the corresponding bits
-
-	// flip bits
-	block := 2
-	ct[block*16] ^= 1
-	ct[block*16+6] ^= 1
-	ct[block*16+11] ^= 1
-
-	if o.IsAdmin(ct) {
-		fmt.Println("success!")
-	} else {
-		fmt.Println("fail!")
+		return strings.Contains(lib.BytesToString(unpadded), ";admin=true;")
 	}
 }

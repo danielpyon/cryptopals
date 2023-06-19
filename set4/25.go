@@ -1,11 +1,9 @@
-package main
+package set4
 
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
 	"encoding/binary"
-	"fmt"
 )
 
 type KeyStream struct {
@@ -66,45 +64,4 @@ func Edit(ciphertext, key []byte, nonce, offset uint64, newText []byte) {
 	for i := 0; i < len(newText); i++ {
 		ciphertext[offset+uint64(i)] = ks.NextByte() ^ newText[i]
 	}
-}
-
-func main() {
-	// read 25.txt to get plaintext
-	pt, err := ReadBase64EncodedFile("25.txt")
-	fmt.Println(BytesToString(pt))
-	if err != nil {
-		panic("could not read file")
-	}
-
-	// encrypt plaintext with random key
-	key := make([]byte, 16)
-	n, err := rand.Read(key)
-	if n != 16 || err != nil {
-		panic("could not generate random key")
-	}
-
-	ct, err := EncryptAesCtr(pt, key, 0)
-	if err != nil {
-		panic("could not encrypt")
-	}
-
-	// edit the CT to all zeros to get the bytes from the keystream
-	newText := make([]byte, len(ct))
-	FillSlice(newText, 0x00)
-
-	// copy the ct
-	keystream := make([]byte, len(ct))
-	copy(keystream, ct)
-	Edit(keystream, key, 0, 0, newText)
-
-	// now, just xor the keystream with the data
-	XorInPlace(ct, keystream)
-
-	// now, ct should equal pt
-	for i := range ct {
-		if pt[i] != ct[i] {
-			panic("Recovered plaintext is not equal to the original plaintext!")
-		}
-	}
-	fmt.Println("Successfully recovered plaintext!")
 }
