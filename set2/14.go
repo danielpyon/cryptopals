@@ -20,7 +20,7 @@ func (o *AesOraclePersistentKeyRandomBytes) Init() {
 	o.key, _ = lib.GenerateAesKey()
 	o.extraData, _ = set1.ReadBase64EncodedFile("12.txt")
 
-	count := randInt(1, 32)
+	count := RandInt(1, 32)
 	o.prefix = make([]byte, count)
 	rand.Read(o.prefix)
 

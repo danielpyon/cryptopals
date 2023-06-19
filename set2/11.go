@@ -9,7 +9,7 @@ import (
 )
 
 // random int in [low, high]
-func randInt(low, high int64) int64 {
+func RandInt(low, high int64) int64 {
 	diff := high - low + 1
 	val, err := rand.Int(rand.Reader, big.NewInt(diff))
 	if err != nil {
@@ -32,7 +32,7 @@ func AesOracle(data []byte) ([]byte, bool) {
 	key, _ := lib.GenerateAesKey()
 
 	// extra bytes appended to front / back of plaintext
-	extraFront, extraBack := int(randInt(5, 10)), int(randInt(5, 10))
+	extraFront, extraBack := int(RandInt(5, 10)), int(RandInt(5, 10))
 
 	plaintext := make([]byte, extraFront+len(data)+extraBack)
 	_, err := rand.Read(plaintext[:extraFront])

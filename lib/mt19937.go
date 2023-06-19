@@ -23,11 +23,11 @@ const (
 
 type MT19937 struct {
 	MT    []uint32
-	index uint32
+	Index uint32
 }
 
 func (mt *MT19937) Init(seed uint32) {
-	mt.index = MT19937_N
+	mt.Index = MT19937_N
 
 	mt.MT = make([]uint32, MT19937_N)
 	mt.MT[0] = seed
@@ -47,24 +47,24 @@ func (mt *MT19937) twist() {
 		}
 		mt.MT[i] = mt.MT[(i+MT19937_M)%MT19937_N] ^ xA
 	}
-	mt.index = 0
+	mt.Index = 0
 }
 
 func (mt *MT19937) Rand() (uint32, error) {
-	if mt.index >= MT19937_N {
-		if mt.index > MT19937_N {
+	if mt.Index >= MT19937_N {
+		if mt.Index > MT19937_N {
 			return 0, errors.New("generator was never seeded")
 		}
 		mt.twist()
 	}
 
-	y := mt.MT[mt.index]
+	y := mt.MT[mt.Index]
 	y ^= ((y >> MT19937_U) & MT19937_D)
 	y ^= ((y << MT19937_S) & MT19937_B)
 	y ^= ((y << MT19937_T) & MT19937_C)
 	y ^= (y >> MT19937_L)
 
-	mt.index++
+	mt.Index++
 	return y, nil
 }
 

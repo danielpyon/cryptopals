@@ -1,25 +1,24 @@
-package main
+package set3
 
 import (
-	"fmt"
-	"time"
+	"github.com/danielpyon/cryptopals/lib"
 )
 
 // given an MT19937, clone it (just based on the outputs, not the internal state)
-func CloneMT19937(mt *MT19937) *MT19937 {
-	internalState := make([]uint32, MT19937_N)
+func CloneMT19937(mt *lib.MT19937) *lib.MT19937 {
+	internalState := make([]uint32, lib.MT19937_N)
 
 	// the internal index will go from 0 to 624, and every time we call rand,
 	// we get a value to reverse. this will be the state array at the index.
-	for index := uint32(0); index < MT19937_N; index++ {
+	for index := uint32(0); index < lib.MT19937_N; index++ {
 		/*
-		we want to reverse this:
+			we want to reverse this:
 
-		0. y = MT[index]
-		1. y ^= (y >> u)
-		2. y ^= ((y << s) & b)
-		3. y ^= ((y << t) & c)
-		4. y ^= (y >> l)
+			0. y = MT[index]
+			1. y ^= (y >> u)
+			2. y ^= ((y << s) & b)
+			3. y ^= ((y << t) & c)
+			4. y ^= (y >> l)
 		*/
 
 		val, err := mt.Rand()
@@ -33,7 +32,7 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 		// abcdefghijklmnopqrstuvwxyz123456
 		// 000000000000000000abcdefghijklmn
 		// abcdefghijklmnopqr--------------
-		val ^= (val >> MT19937_L)
+		val ^= (val >> lib.MT19937_L)
 
 		/// step 2
 		// y ^= ((y << t) & c), t = 15, c = 0xefc60000
@@ -52,8 +51,8 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 		// so we need to left shift the value by 15
 		// then AND it with the mask,
 		// then XOR it with our value
-		val ^= (val << MT19937_T) & MT19937_C
-		
+		val ^= (val << lib.MT19937_T) & lib.MT19937_C
+
 		/// step 3
 		// y ^= ((y << s) & b), s = 7, b = 0x9d2c5680
 		// abcdefghijklmnopqrstuvwxyz123456
@@ -115,7 +114,7 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 		// x[10] = k ^ r (can deduce)
 		val ^= ((val & 0x4000) << 7)
 		// abc-e-ghijklmnopqrstuvwxyz123456
-		
+
 		// x[3] = d ^ k (can deduce)
 		val ^= ((val & 0x200000) << 7)
 		// abcde-ghijklmnopqrstuvwxyz123456
@@ -131,7 +130,7 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 		// 00000000000abcdefghijklmnopqrstu
 		// abcdefghijk+++++++++++----------
 
-		val ^= (val >> MT19937_U) & 0x1ffc00
+		val ^= (val >> lib.MT19937_U) & 0x1ffc00
 		// at this point, we have
 		// abcdefghijklmnopqrstuv----------
 		val ^= (val >> 11) & 0x3ff
@@ -142,41 +141,9 @@ func CloneMT19937(mt *MT19937) *MT19937 {
 	// the internal state of the clone should be equal to mt's state AFTER
 	// Init() (and twist()), so we should set the index to 0 (and don't call
 	// Init()).
-	clone := &MT19937{}
+	clone := &lib.MT19937{}
 	clone.MT = internalState
-	clone.index = 0
+	clone.Index = 0
 
 	return clone
-}
-
-func main() {
-	fmt.Println("[+] === chall 23 ===")
-
-	// first, make an MT
-	seed := uint32(time.Now().Unix())
-	mt := &MT19937{}
-	mt.Init(seed)
-
-	mtClone := CloneMT19937(mt)
-
-	// check some values to make sure they're really the same
-	mtOrig := &MT19937{} // make another mt because we called Rand on the other one
-	mtOrig.Init(seed) // same seed
-
-	for i := 0; i < 600; i++ {
-		orig, err := mtOrig.Rand()
-		if err != nil {
-			panic("could not generate random number!")
-		}
-		clone, err := mtClone.Rand()
-		if err != nil {
-			panic("could not generate random number!")
-		}
-		
-		if (orig != clone) {
-			panic("the clone is not accurate!")
-		}
-	}
-
-	fmt.Println("the clone is accurate!")
 }
