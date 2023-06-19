@@ -1,18 +1,28 @@
 package set1
 
 import (
-	"fmt"
-
-	"github.com/danielpyon/cryptopals/lib"
+	b64 "encoding/base64"
+	"io/ioutil"
+	"strings"
 )
 
-func Test7() {
-	ciphertext, err := lib.ReadBase64EncodedFile("7.txt")
+// Read base64 file and turn it into []byte
+func ReadBase64EncodedFile(filename string) ([]byte, error) {
+	data, err := ioutil.ReadFile(filename)
 	if err != nil {
-		panic("could not read file!")
+		return nil, err
 	}
 
-	key := []byte("YELLOW SUBMARINE")
-	plaintext, _ := lib.DecryptAesEcb(ciphertext, key)
-	fmt.Println(lib.BytesToString(plaintext))
+	split := strings.Split(string(data), "\n")
+	var result string
+	for _, s := range split {
+		result += s
+	}
+
+	dec, err := b64.StdEncoding.DecodeString(result)
+	if err != nil {
+		return nil, err
+	}
+
+	return dec, nil
 }
