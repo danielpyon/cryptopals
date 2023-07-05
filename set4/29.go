@@ -44,9 +44,20 @@ func Sha1Padding(data []byte) []byte {
 	return padded
 }
 
-// Recover the internal state from a checksum
+// Recover the internal registers from a checksum
 func Sha1RecoverState(sum [sha1.Size]byte) [5]uint32 {
-	return nil
+	var state [5]uint32
+
+	for i, _ := range state {
+		// Interpret the current 4 bytes as a big-endian uint32
+		buf := bytes.NewReader(sum[i*4 : i*4+4])
+
+		if binary.Read(buf, binary.BigEndian, &state[i]) != nil {
+			panic("Failed to interpret bytes as uint32")
+		}
+	}
+
+	return state
 }
 
 // Returns a forged SHA1 MAC tag for a given message and extension
