@@ -2,8 +2,8 @@ package set4
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
-	"fmt"
 
 	"github.com/danielpyon/cryptopals/lib/sha1"
 )
@@ -36,11 +36,12 @@ func Sha1Padding(data []byte) []byte {
 	}
 	bytesNeeded = (56 - bytesNeeded) % 64
 
-	zeros := bytes.Repeat([]byte("\x00"), bytesNeeded)
-	padded := append(data, zeros...)
-	fmt.Println(padded)
-
-	return nil
+	padded := append(
+		data,
+		bytes.Repeat([]byte("\x00"), bytesNeeded)...,
+	)
+	padded = binary.LittleEndian.AppendUint64(padded, uint64(len(data)))
+	return padded
 }
 
 // Recover the internal state from a checksum
