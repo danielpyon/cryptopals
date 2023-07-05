@@ -81,5 +81,5 @@ func Sha1LengthExtension(sum [sha1.Size]byte, message, extension, key []byte, le
 		}
 	}
 
-	return nil, errors.New("Could not forge tag!")
+	return nil, errors.New("could not forge tag")
 }
