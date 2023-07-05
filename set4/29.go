@@ -61,11 +61,11 @@ func Sha1RecoverState(sum [sha1.Size]byte) [5]uint32 {
 }
 
 // Returns a forged SHA1 MAC tag for a given message and extension
-func Sha1LengthExtension(sum [sha1.Size]byte, message, extension, key []byte, length uint64) ([]byte, error) {
+func Sha1LengthExtension(sum [sha1.Size]byte, message, extension, key []byte) ([]byte, error) {
 	// the registers used in sha1
 	state := Sha1RecoverState(sum)
 
-	for keyLen := 0; keyLen <= 32; keyLen++ {
+	for keyLen := 1; keyLen <= 32; keyLen++ {
 		newMessage := bytes.Repeat([]byte("A"), keyLen)
 		newMessage = Sha1Padding(append(newMessage, message...))
 
