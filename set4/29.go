@@ -17,7 +17,7 @@ import (
 func Sha1Validate(key, message, sum []byte) bool {
 	tmp := sha1.Sum(append(key, message...))
 
-	for i, _ := range sum {
+	for i := range sum {
 		if tmp[i] != sum[i] {
 			return false
 		}

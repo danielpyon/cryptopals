@@ -37,3 +37,23 @@ Set 4
 - [ ] Break an MD4 keyed MAC using length extension
 - [ ] Implement and break HMAC-SHA1 with an artificial timing leak
 - [ ] Break HMAC-SHA1 with a slightly less artificial timing leak
+
+Set 5
+- [x] Implement Diffie-Hellman
+- [ ] Implement a MITM key-fixing attack on Diffie-Hellman with parameter injection
+- [ ] Implement DH with negotiated groups, and break with malicious "g" parameters
+- [ ] Implement Secure Remote Password (SRP)
+- [ ] Break SRP with a zero key
+- [ ] Offline dictionary attack on simplified SRP
+- [ ] Implement RSA
+- [ ] Implement an E=3 RSA Broadcast attack
+
+Set 6
+- [ ] Implement unpadded message recovery oracle
+- [ ] Bleichenbacher's e=3 RSA Attack
+- [ ] DSA key recovery from nonce
+- [ ] DSA nonce recovery from repeated nonce
+- [ ] DSA parameter tampering
+- [ ] RSA parity oracle
+- [ ] Bleichenbacher's PKCS 1.5 Padding Oracle (Simple Case)
+- [ ] Bleichenbacher's PKCS 1.5 Padding Oracle (Complete Case)
